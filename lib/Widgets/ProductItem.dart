@@ -20,7 +20,7 @@ class ProductItem extends StatelessWidget {
   });
 
   Color getStockColor() {
-    double percentage = (product.stock - product.quantity) / product.stock;
+    double percentage = (product.quantity - product.selectedQuantity) / product.quantity;
     if (percentage > 0.5) return Colors.green;
     if (percentage > 0.2) return Colors.orange;
     return Colors.red;
@@ -45,6 +45,8 @@ class ProductItem extends StatelessWidget {
                 height: 80,
                 width: 80,
                 fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) =>
+                const Icon(Icons.image_not_supported, color: Colors.grey , size: 80,),
               ),
             ),
             const SizedBox(width: 12),
@@ -69,7 +71,7 @@ class ProductItem extends StatelessWidget {
                       borderRadius: BorderRadius.circular(6),
                     ),
                     child: Text(
-                      "Remaining: ${product.stock - product.quantity}",
+                      "Remaining: ${product.quantity - product.selectedQuantity}",
                       style: TextStyle(
                           color: getStockColor(),
                           fontSize: 12,
@@ -92,8 +94,8 @@ class ProductItem extends StatelessWidget {
                   child: IconButton(
                     icon: const Icon(Icons.remove, size: 20),
                     onPressed: () {
-                      if (product.quantity > 0) {
-                        onQuantityChanged(product.quantity - 1);
+                      if (product.selectedQuantity > 0) {
+                        onQuantityChanged(product.selectedQuantity - 1);
                       }
                     },
                   ),
@@ -108,12 +110,12 @@ class ProductItem extends StatelessWidget {
                     keyboardType: TextInputType.number,
                     inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                     controller: TextEditingController(
-                        text: product.quantity.toString())
+                        text: product.selectedQuantity.toString())
                       ..selection = TextSelection.fromPosition(TextPosition(
-                          offset: product.quantity.toString().length)),
+                          offset: product.selectedQuantity.toString().length)),
                     onChanged: (value) {
                       int entered = int.tryParse(value) ?? 0;
-                      if (entered > product.stock) entered = product.stock;
+                      if (entered > product.quantity) entered = product.quantity;
                       onQuantityChanged(entered);
                     },
                     decoration: InputDecoration(
@@ -135,8 +137,8 @@ class ProductItem extends StatelessWidget {
                   child: IconButton(
                     icon: const Icon(Icons.add, size: 20),
                     onPressed: () {
-                      if (product.quantity < product.stock) {
-                        onQuantityChanged(product.quantity + 1);
+                      if (product.selectedQuantity < product.quantity) {
+                        onQuantityChanged(product.selectedQuantity + 1);
                       }
                     },
                   ),
@@ -144,7 +146,7 @@ class ProductItem extends StatelessWidget {
                 const SizedBox(width: 8),
                 // Total price
                 Text(
-                  "\$${(product.price * product.quantity).toStringAsFixed(2)}",
+                  "\$${(product.price * product.selectedQuantity).toStringAsFixed(2)}",
                   style: const TextStyle(
                       fontWeight: FontWeight.bold, fontSize: 14),
                 ),
@@ -158,7 +160,7 @@ class ProductItem extends StatelessWidget {
                     shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8)),
                   ),
-                  onPressed: product.quantity > 0 ? onSell : null,
+                  onPressed: product.selectedQuantity > 0 ? onSell : null,
                   child: const Text(
                     "Sell",
                     style: TextStyle(color: Colors.white),

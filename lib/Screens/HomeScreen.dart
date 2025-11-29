@@ -1,7 +1,9 @@
 import 'package:business_assistance/Screens/Bussiness/BusinessScreen.dart';
-import 'package:business_assistance/Screens/DashboardScreen.dart';
-import 'package:business_assistance/Screens/ProductsScreen.dart';
+import 'package:business_assistance/Screens/Dashboard/DashboardScreen.dart';
+import 'package:business_assistance/Screens/Products/ProductsScreen.dart';
 import 'package:flutter/material.dart';
+
+import 'Bussiness/BusinessesListScreen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -15,7 +17,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   final screens = const [
     DashboardScreen(),
-    BusinessScreen(),
+    BusinessesListScreen(),
     ProductsScreen(),
   ];
 

@@ -1,8 +1,14 @@
 import 'package:business_assistance/Screens/HomeScreen.dart';
 import 'package:flutter/material.dart';
+import 'package:get/get_core/src/get_main.dart';
+import 'package:get/get_instance/src/extension_instance.dart';
+
+import 'Controller/BusinessController.dart';
+
 
 void main() {
-  runApp(const MyApp());
+  Get.put(BusinessController());
+  runApp(MyApp());
 }
 
 class MyApp extends StatelessWidget {
