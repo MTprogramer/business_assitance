@@ -10,7 +10,7 @@ import 'Repo/AiRepository.dart';
 
 void main() {
   Get.put(BusinessController());
-  Get.put(AiController(repository: AiRepository(apiKey: "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")),);
+  Get.put(AiController(repository: AiRepository(apiKey: "API_KEY")),);
   runApp(MyApp());
 }
 
