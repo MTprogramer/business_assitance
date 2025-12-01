@@ -1,13 +1,13 @@
-import 'package:business_assistance/Dialogues/AddBusinessDialog.dart';
-import 'package:business_assistance/Dialogues/ShowDeleteDialogue.dart';
+import 'package:business_assistance/UI/Dialogues/AddBusinessDialog.dart';
+import 'package:business_assistance/UI/Dialogues/ShowDeleteDialogue.dart';
 import 'package:business_assistance/Models/Product.dart';
-import 'package:business_assistance/Screens/Bussiness/BusinessScreen.dart';
-import 'package:business_assistance/Widgets/CustomButton.dart';
-import 'package:business_assistance/Widgets/ProductsList.dart';
+import 'package:business_assistance/UI/Screens/Bussiness/BusinessScreen.dart';
+import 'package:business_assistance/UI/Widgets/CustomButton.dart';
+import 'package:business_assistance/UI/Widgets/ProductsList.dart';
 import 'package:flutter/material.dart';
 
 import '../../Dialogues/ProductAddDialogue.dart';
-import '../../Models/BusinessModel.dart';
+import '../../../Models/BusinessModel.dart';
 
 class ProductsScreen extends StatefulWidget {
   final Business? business;

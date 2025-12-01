@@ -25,34 +25,34 @@ class BusinessController extends GetxController {
   void onInit() {
     super.onInit();
     print("BusinessController initialized");
-    loadBusinesses();
+    // loadBusinesses();
   }
 
-  Future<void> loadBusinesses() async {
-
-    print("BusinessController load fun called");
-    showLoading();
-    isLoading.value = true;
-
-    final list = await repo.getBusinesses();
-    businessList.assignAll(list);
-    print("BusinessController load fun list is $list");
-
-    isLoading.value = false;
-  }
-
-  Future<void> addBusiness(Business business) async {
-    await repo.addBusiness(business);
-    await loadBusinesses(); // refresh UI
-  }
-
-  Future<void> deleteBusiness(String id) async {
-    await repo.deleteBusiness(id);
-    await loadBusinesses();
-  }
-
-  Future<void> updateBusiness(Business business) async {
-    await repo.updateBusiness(business);
-    await loadBusinesses();
-  }
+  // Future<void> loadBusinesses() async {
+  //
+  //   print("BusinessController load fun called");
+  //   showLoading();
+  //   isLoading.value = true;
+  //
+  //   final list = await repo.getBusinesses();
+  //   businessList.assignAll(list);
+  //   print("BusinessController load fun list is $list");
+  //
+  //   isLoading.value = false;
+  // }
+  //
+  // Future<void> addBusiness(Business business) async {
+  //   await repo.addBusiness(business);
+  //   await loadBusinesses(); // refresh UI
+  // }
+  //
+  // Future<void> deleteBusiness(String id) async {
+  //   await repo.deleteBusiness(id);
+  //   await loadBusinesses();
+  // }
+  //
+  // Future<void> updateBusiness(Business business) async {
+  //   await repo.updateBusiness(business);
+  //   await loadBusinesses();
+  // }
 }

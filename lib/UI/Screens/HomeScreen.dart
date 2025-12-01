@@ -1,6 +1,6 @@
-import 'package:business_assistance/Screens/Bussiness/BusinessScreen.dart';
-import 'package:business_assistance/Screens/Dashboard/DashboardScreen.dart';
-import 'package:business_assistance/Screens/Products/ProductsScreen.dart';
+import 'package:business_assistance/UI/Screens/Bussiness/BusinessScreen.dart';
+import 'package:business_assistance/UI/Screens/Dashboard/DashboardScreen.dart';
+import 'package:business_assistance/UI/Screens/Products/ProductsScreen.dart';
 import 'package:flutter/material.dart';
 
 import 'Bussiness/BusinessesListScreen.dart';

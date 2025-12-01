@@ -1,7 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
-import '../Models/Product.dart';
+import '../../Models/Product.dart';
 
 /// Shows a dynamic dialog for adding a new product or editing an existing one.
 /// [existingProduct]: If provided, the dialog is in 'Edit' mode.

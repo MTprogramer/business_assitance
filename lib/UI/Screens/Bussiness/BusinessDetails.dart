@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../Models/BusinessModel.dart';
+import '../../../Models/BusinessModel.dart';
 
 class BusinessDetails extends StatefulWidget {
   final Business business;

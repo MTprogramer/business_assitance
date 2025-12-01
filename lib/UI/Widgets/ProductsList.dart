@@ -3,7 +3,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
-import '../Models/Product.dart';
+import '../../Models/Product.dart';
 
 Widget BuildProductDataTable(List<Product> products , BuildContext context , Function onRemove , Function onEdit) {
   return Container(

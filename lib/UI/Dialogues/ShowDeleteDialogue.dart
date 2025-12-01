@@ -1,9 +1,9 @@
 
 import 'package:business_assistance/Models/Product.dart';
-import 'package:business_assistance/Screens/Products/ProductsScreen.dart';
+import 'package:business_assistance/UI/Screens/Products/ProductsScreen.dart';
 import 'package:flutter/material.dart';
 
-import '../Models/BusinessModel.dart';
+import '../../Models/BusinessModel.dart';
 
 void ShowDeleteDialog(
     BuildContext context, {

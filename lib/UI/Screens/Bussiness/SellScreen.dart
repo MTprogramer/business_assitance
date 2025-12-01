@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../Dialogues/SellDialogue.dart';
-import '../../Models/Product.dart';
+import '../../../Models/Product.dart';
 import '../../Widgets/ProductItem.dart';
 
 

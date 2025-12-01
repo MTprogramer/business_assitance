@@ -1,14 +1,14 @@
-import 'package:business_assistance/Screens/Bussiness/BusinessScreen.dart';
+import 'package:business_assistance/UI/Screens/Bussiness/BusinessScreen.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get_core/src/get_main.dart';
 import 'package:get/get_instance/src/extension_instance.dart';
 
-import '../../Controller/BusinessController.dart';
+import '../../../Controller/BusinessController.dart';
 import '../../Dialogues/AddBusinessDialog.dart';
 import '../../Dialogues/ShowDeleteDialogue.dart';
-import '../../Models/BusinessModel.dart';
-import '../../Models/Product.dart';
+import '../../../Models/BusinessModel.dart';
+import '../../../Models/Product.dart';
 
 class BusinessesListScreen extends StatefulWidget {
   const BusinessesListScreen({super.key});
@@ -25,13 +25,27 @@ class _BusinessesListScreenState extends State<BusinessesListScreen> {
 
   final List<Business> businesses = [
     Business(
+      id: 'b201',
       name: "Tech Store",
+      description: "A specialized electronics shop offering the latest gadgets, accessories, and repair services.",
+      category: "Shop",
+      location: "Unit 10, Main Street Mall",
       totalProducts: 5,
+      phone: "+1-555-400-5000",
+      website: "https://www.techstorepro.com",
+      image: null,
       date: DateTime.now(),
     ),
     Business(
+      id: 'b202',
       name: "Foodies",
+      description: "A popular quick-service restaurant specializing in gourmet sandwiches and fresh wraps.",
+      category: "Restaurant",
+      location: "42 Market Square, Food Court",
       totalProducts: 3,
+      phone: "+1-555-777-8888",
+      website: null,
+      image: "assets/images/foodies_logo.png",
       date: DateTime.now().subtract(Duration(days: 2)),
     ),
   ];
@@ -61,16 +75,23 @@ class _BusinessesListScreenState extends State<BusinessesListScreen> {
       ),
 
 
-      floatingActionButton: showFlottingButton ? FloatingActionButton(
-        onPressed: () {
-          showDialog(
-            context: context,
-            builder: (context) => const AddBusinessDialog(),
-          );
-        },
-        backgroundColor: Colors.blue,
-        tooltip: 'Add',
-        child: Icon(Icons.add, color: Colors.white),
+      floatingActionButton: showFlottingButton ? Padding(
+        padding: const EdgeInsets.only(bottom: 20.0, right: 10.0),
+        child: FloatingActionButton(
+          onPressed: () {
+            showDialog(
+              context: context,
+              builder: (context) => AddBusinessDialog(onSave: (business){
+                setState(() { // <-- ADDED setState() here
+                  businesses.add(business);
+                });
+                },),
+            );
+          },
+          backgroundColor: Colors.blue,
+          tooltip: 'Add',
+          child: Icon(Icons.add, color: Colors.white),
+        ),
       ) : null ,
       body: Container(
         child: showBusinessScreen
@@ -110,7 +131,11 @@ class _BusinessesListScreenState extends State<BusinessesListScreen> {
             onPressed: () {
               showDialog(
                 context: context,
-                builder: (context) => const AddBusinessDialog(),
+                builder: (context) => AddBusinessDialog(onSave: (business){
+                  setState(() { // <-- ADDED setState() here
+                    businesses.add(business);
+                  });
+                },),
               );
             },
             icon: Icon(Icons.add),
@@ -187,7 +212,11 @@ class _BusinessesListScreenState extends State<BusinessesListScreen> {
                               icon: const Icon(
                                   Icons.delete, color: Colors.red),
                               onPressed: () =>
-                                  ShowDeleteDialog(context, business:  business , isFromProduct: false,onDelete: (){}),
+                                  ShowDeleteDialog(context, business:  business , isFromProduct: false,onDelete: (){
+                                    setState(() {
+                                      businesses.remove(business);
+                                    });
+                                  }),
                             ),
                           ],
                         ),

@@ -1,12 +1,14 @@
 
 
+import 'package:business_assistance/Models/BusinessModel.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
 import '../Widgets/InputWidgets.dart';
 
 class AddBusinessDialog extends StatefulWidget {
-  const AddBusinessDialog({super.key});
+  final Function(Business)? onSave;
+  const AddBusinessDialog({super.key, this.onSave});
 
   @override
   State<AddBusinessDialog> createState() => _AddBusinessDialogState();
@@ -86,7 +88,18 @@ class _AddBusinessDialogState extends State<AddBusinessDialog> {
                   /// Save Button
                   ElevatedButton(
                     onPressed: () {
-                      // TODO: Save logic
+                      final businessData = Business(
+                        name: nameController.text,
+                        description: descriptionController.text,
+                        category: categoryController.text,
+                        location: locationController.text,
+                        phone: phoneController.text,
+                        website: websiteController.text,
+                        date: DateTime.now(),
+                      );
+                      if (widget.onSave != null) {
+                        widget.onSave!(businessData);
+                      }
                       Navigator.pop(context);
                     },
                     style: ElevatedButton.styleFrom(

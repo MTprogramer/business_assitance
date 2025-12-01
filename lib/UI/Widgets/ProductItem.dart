@@ -4,7 +4,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import '../Models/Product.dart';
+import '../../Models/Product.dart';
 import '../Screens/Bussiness/SellScreen.dart';
 
 class ProductItem extends StatelessWidget {
