@@ -2,9 +2,8 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 class AiRepository {
-  final String apiKey;
+  final String apiKey = "";
 
-  AiRepository({required this.apiKey});
 
   Future<String> getAiReply(List<Map<String, String>> history) async {
     const url = "https://api.openai.com/v1/chat/completions";

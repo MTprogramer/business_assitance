@@ -10,7 +10,7 @@ import 'Repo/AiRepository.dart';
 
 void main() {
   Get.put(BusinessController());
-  Get.put(AiController(repository: AiRepository(apiKey: "API_KEY")),);
+  Get.put(AiController(repository: AiRepository()),);
   runApp(MyApp());
 }
 
