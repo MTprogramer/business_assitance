@@ -1,3 +1,4 @@
+import 'package:business_assistance/Repo/UploadRepo.dart';
 import 'package:business_assistance/UI/Screens/HomeScreen.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get_core/src/get_main.dart';
@@ -10,7 +11,7 @@ import 'Repo/AiRepository.dart';
 
 void main() {
   Get.put(BusinessController());
-  Get.put(AiController(repository: AiRepository()),);
+  Get.put(AiController(repository: AiRepository() , uploadrepo: Uploadrepo()),);
   runApp(MyApp());
 }
 

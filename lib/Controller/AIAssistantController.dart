@@ -1,15 +1,21 @@
 // lib/controllers/ai_controller.dart
 import 'dart:async';
-import 'package:business_assistance/Repo/AiRepository.dart';
+import 'dart:convert';
+import 'package:archive/archive.dart';
+import 'package:business_assistance/Repo/UploadRepo.dart';
+import 'package:business_assistance/UI/BottomSheets/AiAssistanceSheet.dart';
+import 'package:excel/excel.dart';
 import 'package:get/get.dart';
-
+import 'package:syncfusion_flutter_pdf/pdf.dart';
 import '../Models/MessageModel.dart';
+import '../Repo/AiRepository.dart';
 
 
 class AiController extends GetxController {
   final AiRepository repository;
+  final Uploadrepo uploadrepo;
 
-  AiController({required this.repository});
+  AiController({required this.repository, required this.uploadrepo});
 
   // observable state
   final RxList<ChatMessage> messages = <ChatMessage>[].obs;
@@ -45,15 +51,97 @@ class AiController extends GetxController {
     });
   }
 
+  Future<String> extractTextFromDocx(SelectedFile file) async {
+    if (file.bytes == null) return '';
+
+    final archive = ZipDecoder().decodeBytes(file.bytes!);
+    final documentXml = archive
+        .firstWhere((f) => f.name == 'word/document.xml', orElse: () => throw 'No document.xml found')
+        .content as List<int>;
+    //
+    // final xmlDoc = XmlDocument.parse(String.fromCharCodes(documentXml));
+    // final text = xmlDoc.findAllElements('t').map((node) => node.text).join(' ');
+
+    return "text";
+  }
+
+  Future<String> extractTextFromXlsx(SelectedFile file) async {
+    if (file.bytes == null) return '';
+    final excel = Excel.decodeBytes(file.bytes!);
+    String result = '';
+    for (var table in excel.tables.keys) {
+      for (var row in excel.tables[table]!.rows) {
+        result += row.map((cell) => cell?.value.toString() ?? '').join(' ') + '\n';
+      }
+    }
+    return result;
+  }
+
+  Future<String> extractTextFromPdf(SelectedFile file) async {
+    if (file.bytes == null) return '';
+
+    // Load PDF document from bytes
+    final PdfDocument document = PdfDocument(inputBytes: file.bytes);
+
+    // Extract text from all pages
+    final String text = PdfTextExtractor(document).extractText();
+
+    // Dispose the document to free memory
+    document.dispose();
+
+    return text;
+  }
+  Future<String> extractTextFromTxt(SelectedFile file) async {
+    if (file.bytes == null) return '';
+    return String.fromCharCodes(file.bytes!);
+  }
+
+
+
 
   /// Call from UI when user sends message
-  void sendMessage(String text) {
+  Future<void> sendMessage(String text, {SelectedFile? selectedFile}) async {
     if (text.trim().isEmpty) return;
 
     // add user message immediately
-    messages.add(ChatMessage(role: 'user', text: text));
-
+    messages.add(ChatMessage(role: 'user', text: text , fileName: selectedFile?.name, fileType: selectedFile?.type, fileBytes: selectedFile?.bytes ));
     isSearching.value = true;
+
+    var imageUrl = null;
+    if (selectedFile?.type == "image") {
+      final url = await uploadrepo.uploadImageBytes(selectedFile?.bytes, selectedFile!.name);
+      imageUrl = url?.replaceFirst("http://tmpfiles.org/", "https://tmpfiles.org/dl/");
+      final lastIndex = messages.length - 1;
+      messages[lastIndex] = messages[lastIndex].copyWith(imageUrl: imageUrl);
+      print("imageUrl: $imageUrl");
+    }
+
+
+    String extractedText = '';
+
+    if (selectedFile != null) {
+      switch (selectedFile.extension) {
+        case 'pdf':
+          extractedText = await extractTextFromPdf(selectedFile);
+          break;
+        case 'txt':
+          extractedText = await extractTextFromTxt(selectedFile);
+          break;
+        case 'docx':
+          extractedText = await extractTextFromDocx(selectedFile);
+          break;
+        case 'xlsx':
+          extractedText = await extractTextFromXlsx(selectedFile);
+          break;
+        default:
+          extractedText = 'File type not supported for extraction.';
+      }
+      print("Extracted Text ${selectedFile.extension}: $extractedText");
+    }
+
+    //add extracted text
+    final lastIndex = messages.length - 1;
+    messages[lastIndex] = messages[lastIndex].copyWith(extractedText: extractedText);
 
     final history = _buildHistory();
     repository.getAiReply(history).then((resultText) {
@@ -71,16 +159,51 @@ class AiController extends GetxController {
       });
     });
   }
-  /// Convert your ChatMessage list into OpenAI's format
-  List<Map<String, String>> _buildHistory() {
+
+  List<Map<String, dynamic>> _buildHistory() {
     final lastMessages = messages.length > 10
         ? messages.sublist(messages.length - 10)
         : messages;
 
-    return lastMessages
-        .map((m) => {"role": m.role, "content": m.text})
-        .toList();
+    return messages.where((m) => m.role != "ai")
+        .map((m) {
+      print("file type: ${m.fileType} base 64: ${m.imageUrl}");
+
+      final message_type = m.role == "user" ? "input_text" : "output_text";
+
+      // Image message"
+      // Image message
+      if (m.imageUrl != null && m.fileType == "image") {
+        return {
+          "role": m.role,
+          "content": [
+            {"type": message_type, "text": m.text},
+            {"type": "input_image", "image_url": m.imageUrl} // can be URL or base64 string
+          ]
+        };
+      }
+
+      // Document message (text extracted from file)
+      if (m.fileType == "document") {
+        print("Extracted Text inside doc condi: ${m.extractedText}");
+        return {
+          "role": m.role,
+          "content": [
+            {"type": message_type, "text": "${m.text}\n${m.extractedText}"}
+          ]
+        };
+      }
+
+      // Simple text message
+      return {
+        "role": m.role,
+        "content": [
+          {"type": message_type, "text": m.text}
+        ]
+      };
+    }).toList();
   }
+
 
   void clear() {
     messages.clear();
@@ -89,3 +212,4 @@ class AiController extends GetxController {
 
 
 }
+
