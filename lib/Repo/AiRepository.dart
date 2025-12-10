@@ -9,7 +9,7 @@ class AiRepository {
   Future<String> getAiReply(List<Map<String, dynamic>> history) async {
     const url = "https://api.openai.com/v1/responses";
 
-    print("key is : $apiKey");
+    print("key  : $apiKey");
     print("History: $history");
 
     final body = {
