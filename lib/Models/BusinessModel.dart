@@ -1,5 +1,5 @@
 class Business {
-  final String id; // Unique ID
+  final int id; // Unique ID
   final String name;
   final String description;
   final String category;
@@ -11,7 +11,7 @@ class Business {
   final DateTime date; // date when the business was added
 
   Business({
-    this.id = "",
+    this.id = 0,
     this.name = "",
     this.description = "",
     this.category = "",

@@ -53,7 +53,7 @@ class _BusinessDetailsState extends State<BusinessDetails> {
   void _saveBusiness() {
     if (_formKey.currentState!.validate()) {
       final newBusiness = Business(
-        id: DateTime.now().millisecondsSinceEpoch.toString(),
+        id: DateTime.now().millisecondsSinceEpoch,
         name: _nameController.text,
         description: _descriptionController.text,
         category: _categoryController.text,

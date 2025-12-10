@@ -25,7 +25,7 @@ class _BusinessesListScreenState extends State<BusinessesListScreen> {
 
   final List<Business> businesses = [
     Business(
-      id: 'b201',
+      id: 1,
       name: "Tech Store",
       description: "A specialized electronics shop offering the latest gadgets, accessories, and repair services.",
       category: "Shop",
@@ -37,7 +37,7 @@ class _BusinessesListScreenState extends State<BusinessesListScreen> {
       date: DateTime.now(),
     ),
     Business(
-      id: 'b202',
+      id: 2,
       name: "Foodies",
       description: "A popular quick-service restaurant specializing in gourmet sandwiches and fresh wraps.",
       category: "Restaurant",
