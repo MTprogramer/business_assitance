@@ -28,7 +28,7 @@ class _BusinessScreenState extends State<BusinessScreen> {
   late final List<Widget> screens = [
     BusinessDetails(business: widget.business),
     ProductsScreen(business: widget.business),
-    SellScreen(),
+    SellScreen(business: widget.business),
   ];
 
   // Define the colors

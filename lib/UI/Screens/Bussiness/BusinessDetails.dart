@@ -1,3 +1,4 @@
+import 'package:business_assistance/Controller/BusinessController.dart';
 import 'package:flutter/material.dart';
 
 import '../../../Models/BusinessModel.dart';
@@ -15,6 +16,7 @@ class _BusinessDetailsState extends State<BusinessDetails> {
 
   // NOTE: You can initialize these controllers with existing data here
   // if you were passing a Business object to this screen for editing.
+  final _businessController = BusinessController();
   final _nameController = TextEditingController();
   final _descriptionController = TextEditingController();
   final _categoryController = TextEditingController();
@@ -53,29 +55,21 @@ class _BusinessDetailsState extends State<BusinessDetails> {
   void _saveBusiness() {
     if (_formKey.currentState!.validate()) {
       final newBusiness = Business(
-        id: DateTime.now().millisecondsSinceEpoch,
+        id: widget.business.id,
         name: _nameController.text,
         description: _descriptionController.text,
         category: _categoryController.text,
         location: _locationController.text,
         phone: _phoneController.text,
         website: _websiteController.text.isEmpty ? null : _websiteController.text,
-        date: DateTime.now(),
+        date: widget.business.date,
       );
 
-      print("Saved Business: ${newBusiness.name}");
+      _businessController.updateBusiness(newBusiness);
 
       setState(() {
         _isChanged = false;
       });
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('${newBusiness.name} details saved successfully!'),
-          backgroundColor: Colors.green.shade600, // Success color
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
     }
   }
 

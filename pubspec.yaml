@@ -42,6 +42,8 @@ dependencies:
   archive: ^3.0.0
   supabase_flutter: ^2.0.0
   flutter_dotenv:
+  fl_chart: ^0.63.0
+#  fl_chart: ^1.1.1
 
 
 dev_dependencies:

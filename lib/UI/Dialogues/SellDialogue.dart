@@ -89,13 +89,13 @@ void ShowConfirmSaleDialog(BuildContext context, dynamic product, VoidCallback o
                   const Divider(height: 12, color: Colors.green),
                   _buildDetailRow(
                       label: "Quantity:",
-                      value: product.quantity.toString(),
+                      value: product.selectedQuantity.toString(),
                       isTotal: false),
                   const Divider(height: 12, color: Colors.green),
                   _buildDetailRow(
                       label: "Total Price:",
                       value:
-                      "\$${(product.price * product.quantity).toStringAsFixed(2)}",
+                      "\$${(product.price * product.selectedQuantity).toStringAsFixed(2)}",
                       isTotal: true),
                 ],
               ),

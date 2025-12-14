@@ -8,28 +8,6 @@ import '../../Models/BusinessModel.dart';
 
 import 'Bussiness/BusinessesListScreen.dart';
 
-Future<List<Business>> getAllBusiness() async {
-  print("Getting all business");
-  final data = await Supabase.instance.client
-      .from('business')
-      .select('*');
-  // print("Got all business ${data.length} items $data");
-  return data.map((e) => Business.fromJson(e)).toList();
-}
-
-Future<List<Map<String, dynamic>>> runCustomQuery(String query) async {
-  // Await the RPC directly; no `.execute()` and no `.error`
-  final rawData = await Supabase.instance.client
-      .rpc('run_custom_query', params: {'query': query});
-
-  // rawData is List<dynamic>, convert to List<Map<String, dynamic>>
-  if (rawData is List) {
-    return rawData.map((e) => Map<String, dynamic>.from(e)).toList();
-  }
-
-  // In case of empty result or unexpected type
-  return [];
-}
 
 
 class HomeScreen extends StatefulWidget {
@@ -42,34 +20,13 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   int selectedIndex = 0;
 
-  final screens = const [
+  final screens = [
     DashboardScreen(),
-    BusinessesListScreen(),
-    ProductsScreen(),
+    const BusinessesListScreen(),
+    const ProductsScreen(),
   ];
 
 
-  @override
-  void initState() {
-    super.initState();
-    _loadBusiness();
-  }
-  void _loadBusiness() async {
-    final add = await getAllBusiness();
-    for (var element in add) {
-      print(element.name);
-    }
-
-    final result = await runCustomQuery(
-        'SELECT "name", "totalProducts" FROM business WHERE "totalProducts" > 10'
-    );
-
-    for (var row in result) {
-      print(row["name"]);
-      print(row["totalProducts"]);
-    }
-
-  }
   final navItems = const [
     {"icon": Icons.dashboard_outlined, "label": "Dashboard"},
     {"icon": Icons.business_outlined, "label": "Business"},

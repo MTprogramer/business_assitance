@@ -1,14 +1,12 @@
 import 'package:business_assistance/UI/Screens/Bussiness/BusinessScreen.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:get/get_core/src/get_main.dart';
-import 'package:get/get_instance/src/extension_instance.dart';
+import 'package:get/get.dart';
 
 import '../../../Controller/BusinessController.dart';
-import '../../Dialogues/AddBusinessDialog.dart';
-import '../../Dialogues/ShowDeleteDialogue.dart';
 import '../../../Models/BusinessModel.dart';
-import '../../../Models/Product.dart';
+import '../../Dialogues/AddBusinessDialog.dart';
+import '../../Dialogues/ShowDeleteDialogue.dart'; // Import Getx
+// ... other imports
 
 class BusinessesListScreen extends StatefulWidget {
   const BusinessesListScreen({super.key});
@@ -18,92 +16,91 @@ class BusinessesListScreen extends StatefulWidget {
 }
 
 class _BusinessesListScreenState extends State<BusinessesListScreen> {
+  // Use Get.find to get the registered controller instance
   final businessController = Get.find<BusinessController>();
+
   var showBusinessScreen = false;
   var selectedBusiness = Business(name: '', totalProducts: 0, date: DateTime.now());
   var showFlottingButton = true;
 
-  final List<Business> businesses = [
-    Business(
-      id: 1,
-      name: "Tech Store",
-      description: "A specialized electronics shop offering the latest gadgets, accessories, and repair services.",
-      category: "Shop",
-      location: "Unit 10, Main Street Mall",
-      totalProducts: 5,
-      phone: "+1-555-400-5000",
-      website: "https://www.techstorepro.com",
-      image: null,
-      date: DateTime.now(),
-    ),
-    Business(
-      id: 2,
-      name: "Foodies",
-      description: "A popular quick-service restaurant specializing in gourmet sandwiches and fresh wraps.",
-      category: "Restaurant",
-      location: "42 Market Square, Food Court",
-      totalProducts: 3,
-      phone: "+1-555-777-8888",
-      website: null,
-      image: "assets/images/foodies_logo.png",
-      date: DateTime.now().subtract(Duration(days: 2)),
-    ),
-  ];
+  // Remove the hardcoded List<Business> businesses!
+  // The businessController.businessList will be used instead.
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        toolbarHeight: 80,
-        backgroundColor: Colors.white.withOpacity(0.2),
-        leading: showBusinessScreen
-            ? IconButton(
-          icon: Icon(Icons.arrow_back, color: Colors.black87),
-          onPressed: () {
-            setState(() {
-              showBusinessScreen = false;
-              showFlottingButton = true;
-            });
-          },
-        )
-            : null,
-        title: Text(
-          showBusinessScreen ? 'Business List -> ${selectedBusiness.name}' : 'Business List',
-          style: TextStyle(color: Colors.black87),
+    // Wrap the main body with Obx to react to controller changes
+    return Obx(() {
+      // Get the current list and loading state from the controller
+      final businesses = businessController.businessList;
+      final isLoading = businessController.isLoading.value;
+
+      return Scaffold(
+        appBar: AppBar(
+          toolbarHeight: 80,
+          backgroundColor: Colors.white.withOpacity(0.2),
+          leading: showBusinessScreen
+              ? IconButton(
+            icon: const Icon(Icons.arrow_back, color: Colors.black87),
+            onPressed: () {
+              setState(() {
+                showBusinessScreen = false;
+                showFlottingButton = true;
+              });
+            },
+          )
+              : null,
+          title: Text(
+            showBusinessScreen ? 'Business List -> ${selectedBusiness.name}' : 'Business List',
+            style: const TextStyle(color: Colors.black87),
+          ),
+          elevation: 0,
         ),
-        elevation: 0,
-      ),
-
-
-      floatingActionButton: showFlottingButton ? Padding(
-        padding: const EdgeInsets.only(bottom: 20.0, right: 10.0),
-        child: FloatingActionButton(
-          onPressed: () {
-            showDialog(
-              context: context,
-              builder: (context) => AddBusinessDialog(onSave: (business){
-                setState(() { // <-- ADDED setState() here
-                  businesses.add(business);
-                });
+        floatingActionButton: showFlottingButton ? Padding(
+          padding: const EdgeInsets.only(bottom: 20.0, right: 10.0),
+          child: FloatingActionButton(
+            onPressed: () {
+              showDialog(
+                context: context,
+                builder: (context) => AddBusinessDialog(onSave: (business){
+                  // Call the controller function to add the business
+                  businessController.addBusiness(business);
                 },),
-            );
-          },
-          backgroundColor: Colors.blue,
-          tooltip: 'Add',
-          child: Icon(Icons.add, color: Colors.white),
+              );
+            },
+            backgroundColor: Colors.blue,
+            tooltip: 'Add',
+            child: const Icon(Icons.add, color: Colors.white),
+          ),
+        ) : null ,
+        body: Container(
+          child: showBusinessScreen
+              ? BusinessScreen(business: selectedBusiness)
+              : isLoading
+              ? _buildLoadingState() // Show loading spinner
+              : businesses.isEmpty
+              ? _buildEmptyState(context)
+              : _buildBusinessCard(businesses), // Pass the reactive list
         ),
-      ) : null ,
-      body: Container(
-        child: showBusinessScreen
-            ? BusinessScreen(business: selectedBusiness)
-            : businesses.isEmpty
-            ? _buildEmptyState(context)
-            : _buildBusinessCard(),
+      );
+    }); // End of Obx
+  }
+
+  // New Widget to show the loading state
+  Widget _buildLoadingState() {
+    return const Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          CircularProgressIndicator(),
+          SizedBox(height: 20),
+          Text("Fetching businesses...", style: TextStyle(fontSize: 16)),
+        ],
       ),
     );
   }
 
   Widget _buildEmptyState(BuildContext context) {
+    // ... (Empty state widget remains largely the same)
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -112,19 +109,19 @@ class _BusinessesListScreenState extends State<BusinessesListScreen> {
             "assets/images/no_bussines_image.jpeg",
             height: 180,
           ),
-          SizedBox(height: 20),
-          Text(
+          const SizedBox(height: 20),
+          const Text(
             "You have no business yet",
             style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
           ),
-          Text(
+          const Text(
             "Add your first business to get started",
             style: TextStyle(fontSize: 16, color: Colors.grey),
           ),
-          SizedBox(height: 25),
+          const SizedBox(height: 25),
           ElevatedButton.icon(
             style: ElevatedButton.styleFrom(
-              padding: EdgeInsets.symmetric(horizontal: 35, vertical: 14),
+              padding: const EdgeInsets.symmetric(horizontal: 35, vertical: 14),
               shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12)),
             ),
@@ -132,28 +129,28 @@ class _BusinessesListScreenState extends State<BusinessesListScreen> {
               showDialog(
                 context: context,
                 builder: (context) => AddBusinessDialog(onSave: (business){
-                  setState(() { // <-- ADDED setState() here
-                    businesses.add(business);
-                  });
+                  // Call the controller function to add the business
+                  businessController.addBusiness(business);
                 },),
               );
             },
-            icon: Icon(Icons.add),
-            label: Text("Add Business"),
+            icon: const Icon(Icons.add),
+            label: const Text("Add Business"),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildBusinessCard() {
-   return Column(
+  // Updated to accept the business list
+  Widget _buildBusinessCard(List<Business> businesses) {
+    return Column(
       children: [
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           color: Colors.blue.shade50,
-          child: Row(
-            children: const [
+          child: const Row(
+            children: [
               Expanded(flex: 3,
                   child: Text(
                       "Name", style: TextStyle(fontWeight: FontWeight.bold))),
@@ -192,8 +189,9 @@ class _BusinessesListScreenState extends State<BusinessesListScreen> {
                   child: Row(
                     children: [
                       Expanded(flex: 3, child: Text(business.name)),
+                      // Ensure totalProducts is not null before toString
                       Expanded(flex: 2, child: Text(
-                          business.totalProducts.toString())),
+                          (business.totalProducts ?? 0).toString())),
                       Expanded(flex: 2, child: Text(
                           "${business.date.day}/${business.date
                               .month}/${business.date.year}")),
@@ -201,21 +199,15 @@ class _BusinessesListScreenState extends State<BusinessesListScreen> {
                         flex: 3,
                         child: Row(
                           children: [
-                            // IconButton(
-                            //   icon: const Icon(
-                            //       Icons.edit, color: Colors.blue),
-                            //   onPressed: () {
-                            //     // TODO: handle edit
-                            //   },
-                            // ),
                             IconButton(
                               icon: const Icon(
                                   Icons.delete, color: Colors.red),
                               onPressed: () =>
-                                  ShowDeleteDialog(context, business:  business , isFromProduct: false,onDelete: (){
-                                    setState(() {
-                                      businesses.remove(business);
-                                    });
+                                  ShowDeleteDialog(context, business:  business , isFromProduct: false,onDelete: () {
+                                    // Call the controller delete function
+                                    if (business.id != null) {
+                                      businessController.deleteBusiness(business.id.toString());
+                                    }
                                   }),
                             ),
                           ],
@@ -232,4 +224,3 @@ class _BusinessesListScreenState extends State<BusinessesListScreen> {
     );
   }
 }
-

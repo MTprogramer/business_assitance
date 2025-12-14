@@ -6,7 +6,7 @@ class AiRepository {
   final apiKey = String.fromEnvironment("API_KEY" , defaultValue: "");
 
 
-  Future<String> getAiReply(List<Map<String, dynamic>> history) async {
+  Future<Map<String, String>> getAiReply(List<Map<String, dynamic>> history) async {
     const url = "https://api.openai.com/v1/responses";
 
     print("key  : $apiKey");
@@ -34,7 +34,10 @@ class AiRepository {
       final data = jsonDecode(response.body);
       final outputList = data['output'] as List<dynamic>?;
 
+      print(outputList);
       String reply = "";
+
+      Map<String, String> map  = {};
 
 // Check if output exists
       if (outputList != null && outputList.isNotEmpty) {
@@ -45,6 +48,25 @@ class AiRepository {
           for (var content in contentList) {
             if (content['type'] == 'output_text') {
               reply = content['text']?.toString().trim() ?? "";
+
+              try {
+                var parsed = jsonDecode(reply) as Map<String, dynamic>;
+
+                final bool isDbRelated = parsed['isDbRelated'] == true;
+                final String? schemaQuery = parsed['schemaQuery'] as String?;
+                final String? responseText = parsed['response'] as String?;
+
+                if (isDbRelated && schemaQuery != null && schemaQuery.isNotEmpty) {
+                  map = {"type": "query", "response": schemaQuery};
+                } else if (responseText != null && responseText.isNotEmpty) {
+                  map = {"type": "stream", "response": responseText};
+                } else {
+                  map = {"type": "stream", "response": reply};
+                }
+              } catch (_) {
+                map = {"type": "stream", "response": reply};
+              }
+
               break; // Stop after first output_text
             }
           }
@@ -52,7 +74,7 @@ class AiRepository {
       }
 
       print("✅ Parsed AI Reply: $reply");
-      return reply;
+      return map;
     } else {
       print("❌ API ERROR: ${response.statusCode} => ${response.body}");
       throw Exception("AI Error: ${response.statusCode}");

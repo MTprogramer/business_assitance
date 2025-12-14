@@ -11,14 +11,16 @@ import 'Models/BusinessModel.dart';
 import 'Repo/AiRepository.dart';
 import "package:flutter_dotenv/flutter_dotenv.dart";
 
+import 'Repo/CustomDBRepo.dart';
+
 
 Future<void> main() async {
-  Get.put(BusinessController());
-  Get.put(AiController(repository: AiRepository() , uploadrepo: Uploadrepo()),);
   await Supabase.initialize(
     url: 'https://khlbjnqclopfwbpyniqz.supabase.co',
     anonKey: 'sb_publishable_d4OCn0mQUx9s-KAL5qqxkg_Nfmfuseh',
   );
+  Get.put(BusinessController());
+  Get.put(AiController(repository: AiRepository() , uploadrepo: Uploadrepo() , customDBRepo: CustomDBRepo()));
   runApp(MyApp());
 }
 

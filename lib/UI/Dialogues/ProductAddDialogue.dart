@@ -46,12 +46,12 @@ void ShowProductFormDialog(BuildContext context, {Product? existingProduct, requ
           void handleSubmit() {
             if (_formKey.currentState!.validate()) {
               final Map<String, dynamic> productData = {
-                'id': existingProduct?.id ?? '', // Use existing ID or let the caller generate one
                 'name': nameController.text.trim(),
                 'price': double.tryParse(priceController.text.trim()) ?? 0.0,
                 'imageUrl': imageUrlController.text.trim(),
                 'quantity': int.tryParse(stockController.text.trim()) ?? 0,
                 'businessName': existingProduct?.businessName ?? "",
+                'businessId': existingProduct?.businessId ?? "",
               };
 
               // Execute the callback with the new/updated data
