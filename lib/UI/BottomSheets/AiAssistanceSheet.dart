@@ -7,6 +7,7 @@ import 'package:get/get_core/src/get_main.dart';
 import 'package:get/get_instance/src/extension_instance.dart';
 import 'package:get/get_state_manager/src/rx_flutter/rx_obx_widget.dart';
 import 'package:file_picker/file_picker.dart'; // REQUIRED
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../Controller/AIAssistantController.dart';
 import '../../Models/MessageModel.dart';
@@ -20,7 +21,6 @@ class SelectedFile {
   final Uint8List? bytes; // <--- NEW: Crucial for rendering the preview
   SelectedFile(this.name, this.path, this.type, this.bytes,  this.extension);
 }
-
 class AIAssistantPanel extends StatefulWidget {
   AIAssistantPanel({super.key});
 
@@ -36,7 +36,7 @@ class _AIAssistantPanelState extends State<AIAssistantPanel> {
 
   SelectedFile? _selectedFile;
 
-  // --- NEW HELPER: Shows the options to the user ---
+  // Shows the file picking options to the user
   Future<String?> _showFilePickerOptions() async {
     return await showModalBottomSheet<String>(
       context: context,
@@ -104,11 +104,11 @@ class _AIAssistantPanelState extends State<AIAssistantPanel> {
     PlatformFile file = result.files.first;
 
     String fileExtension = file.extension ?? '';
+    // DOCX files are currently not supported for extraction in the controller
     if (fileExtension.toLowerCase() == 'docx') {
-      // ⚠️ Show the "Not Supported" Toast
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text("The '.docx' file type is currently not supported."),
+          content: Text("The '.docx' file type is currently not supported for content extraction."),
           backgroundColor: Colors.red,
         ),
       );
@@ -125,7 +125,6 @@ class _AIAssistantPanelState extends State<AIAssistantPanel> {
       );
     });
   }
-
 
   // Method to clear the selected file
   void _clearFile() {
@@ -147,11 +146,11 @@ class _AIAssistantPanelState extends State<AIAssistantPanel> {
     }
   }
 
-  // Existing message bubble widget (UPDATED to display file/image)
+  // Existing message bubble widget (UPDATED to display file/image and AI-generated image)
   Widget buildMessage(ChatMessage msg) {
     bool isUser = msg.role == "user";
 
-    // New: Widget to display the attached file/image
+    // 1. Widget to display the attached file/image (User's side)
     Widget fileContent = const SizedBox.shrink();
     if (isUser && msg.fileName != null) {
       if (msg.fileType == 'image' && msg.fileBytes != null) {
@@ -171,7 +170,7 @@ class _AIAssistantPanelState extends State<AIAssistantPanel> {
       } else {
         // Display Document File Info
         fileContent = Padding(
-          padding: EdgeInsets.only(bottom: msg.text.isNotEmpty ? 8.0 : 0), // Add padding only if text follows
+          padding: EdgeInsets.only(bottom: msg.text.isNotEmpty ? 8.0 : 0),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -189,6 +188,58 @@ class _AIAssistantPanelState extends State<AIAssistantPanel> {
         );
       }
     }
+
+
+    // 2. NEW: Widget to display AI-generated image and download button (AI's side)
+    Widget aiImageContent = const SizedBox.shrink();
+    if (!isUser && msg.imageUrl != null && msg.imageUrl!.startsWith('http')) {
+      aiImageContent = Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(8.0),
+            child: Image.network(
+              msg.imageUrl!,
+              width: 200, // Fixed width for chart/image preview
+              loadingBuilder: (context, child, loadingProgress) {
+                if (loadingProgress == null) return child;
+                return SizedBox(
+                  width: 200,
+                  height: 200,
+                  child: Center(
+                    child: CircularProgressIndicator(
+                      value: loadingProgress.expectedTotalBytes != null
+                          ? loadingProgress.cumulativeBytesLoaded /
+                          loadingProgress.expectedTotalBytes!
+                          : null,
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+          const SizedBox(height: 8),
+          TextButton.icon(
+            icon: const Icon(Icons.download, size: 18),
+            label: const Text('Download Image'),
+            onPressed: () async {
+              final uri = Uri.parse(msg.imageUrl!);
+              if (await canLaunchUrl(uri)) {
+                // Opens the URL, allowing the user to view/download the image
+                await launchUrl(uri);
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Could not open ${msg.imageUrl!}')),
+                );
+              }
+            },
+          ),
+          // Add a divider if text is present below the image
+          if (msg.text.isNotEmpty) const Divider(height: 16, thickness: 0.5),
+        ],
+      );
+    }
+
 
     return Row(
       mainAxisAlignment:
@@ -212,18 +263,20 @@ class _AIAssistantPanelState extends State<AIAssistantPanel> {
               color: isUser ? Colors.blue.shade100 : Colors.grey.shade200,
               borderRadius: BorderRadius.circular(12),
             ),
-            child: Column( // Use Column to stack file content and text
+            child: Column( // Use Column to stack all contents
               crossAxisAlignment: isUser ? CrossAxisAlignment.end : CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
-                // 1. Render the file/image content
-                fileContent,
-                // 2. Render the message text (only if it's not empty)
+                // 1. User's attached file/image
+                if (isUser) fileContent,
+                // 2. AI's generated image/chart
+                if (!isUser) aiImageContent,
+                // 3. Render the message text (only if it's not empty)
                 if (msg.text.isNotEmpty)
                   Text(msg.text),
-                // If only a file was sent, ensure text is rendered (even if empty string)
-                if (msg.text.isEmpty && msg.fileName != null)
-                  const SizedBox.shrink(), // Don't show extra space if only file was sent
+                // Only show text content (which includes the streaming text)
+                if (msg.text.isEmpty && (msg.fileName != null || msg.imageUrl != null))
+                  const SizedBox.shrink(),
               ],
             ),
           ),
@@ -347,7 +400,7 @@ class _AIAssistantPanelState extends State<AIAssistantPanel> {
               children: [
                 // Attachment Button
                 Obx(() => IconButton(
-                  onPressed: aiController.writing.value ? null : _pickFile,
+                  onPressed: aiController.writing.value || aiController.isSearching.value ? null : _pickFile,
                   icon: Icon(
                     _selectedFile != null ? Icons.attach_file : Icons.attachment,
                     color: _selectedFile != null ? Colors.blue.shade700 : Colors.grey,
@@ -374,13 +427,16 @@ class _AIAssistantPanelState extends State<AIAssistantPanel> {
                       ),
                     ),
                     onSubmitted: (v) {
-                      print("is writing : ${aiController.writing.value} is searching : ${aiController.isSearching.value}");
                       if (aiController.writing.value || aiController.isSearching.value) return;
-                      // Pass the text AND the file to the controller
-                      aiController.sendMessage(v, selectedFile: _selectedFile, // <--- PASS FILE
-                      );
-                      inputController.clear();
-                      _clearFile(); // Clear the file after sending
+                      // Only send if there's text or a file selected
+                      if (v.trim().isNotEmpty || _selectedFile != null) {
+                        aiController.sendMessage(
+                          v,
+                          selectedFile: _selectedFile,
+                        );
+                        inputController.clear();
+                        _clearFile(); // Clear the file after sending
+                      }
                     },
                   ),
                 ),
@@ -393,12 +449,15 @@ class _AIAssistantPanelState extends State<AIAssistantPanel> {
                   ),
                   child: IconButton(
                     onPressed: aiController.writing.value || aiController.isSearching.value ? null : () {
-                      // Pass the text AND the file to the controller
-                      aiController.sendMessage(
-                        inputController.text, selectedFile: _selectedFile, // <--- PASS FILE
-                      );
-                      inputController.clear();
-                      _clearFile(); // Clear the file after sending
+                      // Only send if there's text or a file selected
+                      if (inputController.text.trim().isNotEmpty || _selectedFile != null) {
+                        aiController.sendMessage(
+                          inputController.text,
+                          selectedFile: _selectedFile,
+                        );
+                        inputController.clear();
+                        _clearFile(); // Clear the file after sending
+                      }
                     },
                     icon: const Icon(Icons.send, color: Colors.white),
                     splashRadius: 24,

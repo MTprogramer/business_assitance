@@ -5,7 +5,6 @@ import 'package:http/http.dart' as http;
 class AiRepository {
   final apiKey = String.fromEnvironment("API_KEY" , defaultValue: "");
 
-
   Future<Map<String, String>> getAiReply(List<Map<String, dynamic>> history) async {
     const url = "https://api.openai.com/v1/responses";
 
@@ -80,6 +79,33 @@ class AiRepository {
       throw Exception("AI Error: ${response.statusCode}");
     }
   }
+
+  Future<String> generateImage(String prompt) async {
+    final url = Uri.parse('https://api.openai.com/v1/images/generations');
+
+    final response = await http.post(
+      url,
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $apiKey',
+      },
+      body: jsonEncode({
+        'model': 'gpt-image-1',
+        'prompt': prompt,
+        'n': 1,
+        'size': '1024x1024',
+      }),
+    );
+
+    if (response.statusCode != 200) {
+      throw Exception('Image generation failed: ${response.body}');
+    }
+
+    final data = jsonDecode(response.body);
+    return data['data'][0]['b64_json'];
+  }
+
+
 
   // Future<String> getAiReply(List<Map<String, dynamic>> history) async {
   //   const url = "https://api.openai.com/v1/chat/completions";

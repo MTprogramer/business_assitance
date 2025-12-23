@@ -1,5 +1,6 @@
 // lib/controllers/ai_controller.dart
 import 'dart:async';
+import 'dart:convert';
 import 'package:archive/archive.dart';
 import 'package:business_assistance/Repo/CustomDBRepo.dart';
 import 'package:business_assistance/Repo/UploadRepo.dart';
@@ -26,9 +27,10 @@ class AiController extends GetxController {
   final RxBool writing = false.obs;
   final Duration typingDelay = const Duration(milliseconds: 30);
 
-  void _streamResponse(String responseText) {
+  void _streamResponse(String responseText, {String base64 = ""}) {
     // 1. Create a new message with empty text and add it to the list
     final streamingMessage = ChatMessage(
+      imageUrl: base64,
       role: "assistant",
       text: "",
     );
@@ -92,13 +94,25 @@ class AiController extends GetxController {
     // Dispose the document to free memory
     document.dispose();
 
-    return text;
+    return cleanText( text);
   }
   Future<String> extractTextFromTxt(SelectedFile file) async {
     if (file.bytes == null) return '';
-    return String.fromCharCodes(file.bytes!);
+    return utf8.decode(file.bytes!, allowMalformed: true);
   }
 
+
+  String cleanText(String input) {
+    final safe = utf8.decode(
+      utf8.encode(input),
+      allowMalformed: true,
+    );
+
+    return safe
+        .replaceAll('\uFFFD', '')
+        .replaceAll(RegExp(r'\s+'), ' ')
+        .trim();
+  }
 
 
 
@@ -106,6 +120,7 @@ class AiController extends GetxController {
   Future<void> sendMessage(String text, {SelectedFile? selectedFile}) async {
     if (text.trim().isEmpty) return;
     var instructionType = InstructionTypes.DATABASE;
+    var base64 = "";
 
     // add user message immediately
     messages.add(ChatMessage(role: 'user', text: text , fileName: selectedFile?.name, fileType: selectedFile?.type, fileBytes: selectedFile?.bytes ));
@@ -154,13 +169,25 @@ class AiController extends GetxController {
         : DbConstantInstructions.dbInstruction;
 
     final history = _buildHistory(instruction);
+
+    //generate image if user asks for it with doc
+    // if(text.contains("chart") && extractedText.isNotEmpty) {
+    //   base64 = await repository.generateImage("$text \n $extractedText");
+    //   isSearching.value = false;
+    //   messages.add(ChatMessage(
+    //     role: 'ai',
+    //     text: 'Server is busy try again after a movement',
+    //   ));
+    //   if(base64.isEmpty) return;
+    // }
+
     repository.getAiReply(history).then((resultText) {
 
       if (resultText["type"] == "query") {
         handleQuery(resultText);
       }else if (resultText["type"] == "stream") {
         isSearching.value = false;
-        _streamResponse(resultText["response"].toString());
+        _streamResponse(resultText["response"].toString() , base64: base64);
       }
 
       // messages.add(ChatMessage(role: 'assistant', text: resultText));

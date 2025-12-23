@@ -199,42 +199,6 @@ class DashboardScreen extends StatelessWidget {
     );
   }
 
-  // Helper function to calculate MaxY dynamically and robustly
-//   double _calculateMaxY(List<MapEntry<String, double>> monthlyData) {
-//     if (monthlyData.isEmpty) return 500; // Default max if no data
-//
-//     final maxMonthlyRevenue = monthlyData.map((e) => e.value).reduce((a, b) => a > b ? a : b);
-//
-//     if (maxMonthlyRevenue == 0) return 500;
-//
-//     // Find the nearest intelligent rounding factor (100, 1000, 10000, etc.)
-//     double roundingFactor = 100;
-//     if (maxMonthlyRevenue > 10000) {
-//       roundingFactor = 1000;
-//     } else if (maxMonthlyRevenue > 50000) {
-//       roundingFactor = 10000;
-//     }
-//
-//     // Round up the max value to the nearest factor (e.g., 1020 -> 1100, 4500 -> 5000)
-//     final roundedMax = (maxMonthlyRevenue / roundingFactor).ceil() * roundingFactor;
-//
-//     // Add a small buffer (e.g., 10%) for padding at the top
-//     return roundedMax + (roundedMax * 0.1);
-//   }
-//
-// // Helper function to calculate the necessary width for the chart body
-//   double _calculateChartWidth(int dataPoints, double barWidth, double spaceAround) {
-//     // Formula: (Number of bars * Bar width) + (Number of spaces * Space size) + Padding
-//     // We use 30 as a minimum width per bar group.
-//     const double widthPerGroup = 35.0;
-//     final minWidth = dataPoints * widthPerGroup;
-//
-//     // Ensure the chart is at least the width of its container, but can grow horizontally.
-//     return minWidth > 600 ? minWidth : 600; // Use 600 as a standard minimum width for a chart in a wide column
-//   }
-
-  // Add these functions inside the DashboardScreen class
-
 // Helper function to build BarChartGroupData
   List<BarChartGroupData> _buildBarGroups(List<MapEntry<String, double>> monthlyData) {
     return List.generate(monthlyData.length, (i) {
@@ -272,121 +236,181 @@ class DashboardScreen extends StatelessWidget {
     return roundedMax + (roundedMax * 0.1);
   }
 
-// Helper function to calculate chart width (Ensure this is also present)
-  double _calculateChartWidth(int dataPoints, double barWidth, double spaceAround) {
-    const double widthPerGroup = 35.0;
-    final minWidth = dataPoints * widthPerGroup;
-    return minWidth > 600 ? minWidth : 600;
+  Widget _buildChartControls() {
+    return Row(
+      children: [
+        // Toggle Switch
+        ToggleButtons(
+          isSelected: [
+            controller.viewMode.value == ChartViewMode.daily,
+            controller.viewMode.value == ChartViewMode.monthly
+          ],
+          onPressed: (index) {
+            controller.changeViewMode(index == 0 ? ChartViewMode.daily : ChartViewMode.monthly);
+          },
+          constraints: const BoxConstraints(minHeight: 30, minWidth: 60),
+          borderRadius: BorderRadius.circular(8),
+          selectedColor: Colors.white,
+          fillColor: Colors.blue,
+          children: const [Text("Daily"), Text("Monthly")],
+        ),
+        const SizedBox(width: 10),
+        // Month Picker (Only shows when in Daily mode or to change year)
+        IconButton(
+          icon: const Icon(Icons.calendar_month, color: Colors.blue),
+          onPressed: () async {
+            // Simple month picker logic
+            DateTime? picked = await showDatePicker(
+              context: Get.context!,
+              initialDate: controller.selectedMonthForDaily.value,
+              firstDate: DateTime(2020),
+              lastDate: DateTime(2030),
+            );
+            if (picked != null) controller.updateSelectedMonth(picked);
+          },
+        ),
+      ],
+    );
   }
 
   Widget _buildRevenueChart() {
-    final monthlyData = controller.monthlySalesData.entries.toList();
-    final barGroups = _buildBarGroups(monthlyData); // Use the helper function
-    final maxY = _calculateMaxY(monthlyData);
-    final chartWidth = _calculateChartWidth(monthlyData.length, 16, 20);
+    return Obx(() {
+      final isMonthly = controller.viewMode.value == ChartViewMode.monthly;
+      final dataMap = isMonthly ? controller.monthlyData : controller.dailyData;
+      final chartEntries = dataMap.entries.toList()..sort((a, b) => a.key.compareTo(b.key));
 
-    return Container(
-      padding: const EdgeInsets.all(20),
-      height: 400,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(15),
-        boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 10, offset: Offset(0, 5))],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Monthly Revenue Trend',
-            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.black87),
-          ),
-          const Divider(height: 20),
-          Expanded(
-            child: monthlyData.isEmpty
-                ? const Center(
-              child: Text(
-                'No sales data recorded yet to build the trend chart.',
-                textAlign: TextAlign.center,
-                style: TextStyle(color: Colors.grey),
-              ),
-            )
-                : SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.only(right: 16),
-              child: SizedBox(
-                width: chartWidth, // Controls the scrollable area
-                child: BarChart(
-                  BarChartData(
-                    barGroups: barGroups,
-                    alignment: BarChartAlignment.spaceAround,
-                    maxY: maxY,
-                    borderData: FlBorderData(show: false),
-                    gridData: FlGridData(show: true, drawVerticalLine: false),
-                    titlesData: FlTitlesData(
-                      show: true,
-                      bottomTitles: AxisTitles(
-                        sideTitles: SideTitles(
-                          showTitles: true,
-                          reservedSize: 45, // Increased size to accommodate rotation
-                          getTitlesWidget: (value, meta) {
-                            if (value.toInt() >= 0 && value.toInt() < monthlyData.length) {
-                              final monthYear = monthlyData[value.toInt()].key;
-                              final parts = monthYear.split('/');
+      // Format the Month Name for the title (e.g., "January 2024")
+      const monthNames = ['', 'January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+      final currentMonthName = monthNames[controller.selectedMonthForDaily.value.month];
+      final currentYear = controller.selectedMonthForDaily.value.year;
 
-                              // Map month number to short name (1 -> Jan)
-                              final monthNum = int.tryParse(parts[0]) ?? 1;
-                              const monthNames = ['', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-                              final month = monthNames[monthNum];
-                              final year = parts[1].substring(2); // Get last two digits of year ('24)
-
-                              // Return rotated labels
-                              return SideTitleWidget(
-                                axisSide: meta.axisSide,
-                                space: 8.0,
-                                child: RotatedBox(
-                                  quarterTurns: 0, // 1 is and -1 for opposite date position
-                                  child: Text(
-                                    '$month \'${year}',
-                                    style: const TextStyle(fontSize: 10),
-                                  ),
-                                ),
-                              );
-                            }
-                            return Container();
-                          },
-                        ),
-                      ),
-                      // Y-axis titles (Left Titles) are fine as they are not rotated
-                      leftTitles: AxisTitles(
-                        sideTitles: SideTitles(
-                          showTitles: true,
-                          reservedSize: 40,
-                          getTitlesWidget: (value, meta) => Text('\$${value.toInt()}', style: const TextStyle(fontSize: 10)),
-                        ),
-                      ),
-                      topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                      rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+      return Container(
+        padding: const EdgeInsets.all(20),
+        height: 400,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(15),
+          boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 10, offset: Offset(0, 5))],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // --- HEADER SECTION ---
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      isMonthly ? 'Annual Revenue Trend' : 'Daily Revenue Trend',
+                      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                     ),
-                    barTouchData: BarTouchData(
-                      touchTooltipData: BarTouchTooltipData(
-                        getTooltipItem: (group, groupIndex, rod, rodIndex) {
-                          return BarTooltipItem(
-                            '\$${rod.toY.toStringAsFixed(2)}',
-                            const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-                          );
-                        },
+                    // SHOW MONTH NAME ON TOP WHEN DAILY IS SELECTED
+                    if (!isMonthly)
+                      Text(
+                        '$currentMonthName $currentYear',
+                        style: TextStyle(color: Colors.blue.shade700, fontWeight: FontWeight.w600),
                       ),
-                    ),
-                  ),
-                  swapAnimationDuration: const Duration(milliseconds: 800),
-                  swapAnimationCurve: Curves.easeOut,
+                    if (isMonthly)
+                      Text('Year: $currentYear', style: const TextStyle(color: Colors.grey, fontSize: 12)),
+                  ],
                 ),
+                _buildChartControls(),
+              ],
+            ),
+            const Divider(height: 25),
+
+            // --- CHART SECTION ---
+            Expanded(
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  // If Monthly: Use full width of container
+                  // If Daily: Use 1000px to allow scrolling
+                  final double chartWidth = isMonthly ? constraints.maxWidth : 1100;
+
+                  return dataMap.values.every((v) => v == 0)
+                      ? const Center(child: Text('No data recorded for this period.'))
+                      : SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    // Disable scrolling if it's Monthly
+                    physics: isMonthly ? const NeverScrollableScrollPhysics() : const ClampingScrollPhysics(),
+                    child: SizedBox(
+                      width: chartWidth,
+                      child: _buildBarChart(chartEntries, isMonthly),
+                    ),
+                  );
+                },
               ),
             ),
+          ],
+        ),
+      );
+    });
+  }
+
+  Widget _buildBarChart(List<MapEntry<int, double>> entries, bool isMonthly) {
+    final maxY = _calculateMaxYFromEntries(entries);
+
+    return BarChart(
+      BarChartData(
+        maxY: maxY,
+        alignment: BarChartAlignment.spaceAround, // Distributes bars evenly
+        barGroups: entries.map((e) => BarChartGroupData(
+          x: e.key,
+          barRods: [
+            BarChartRodData(
+              toY: e.value,
+              color: isMonthly ? Colors.blue.shade600 : Colors.blue.shade400,
+              width: isMonthly ? 24 : 14, // Monthly bars are thicker
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(4)),
+            )
+          ],
+        )).toList(),
+        titlesData: FlTitlesData(
+          leftTitles: AxisTitles(
+            sideTitles: SideTitles(
+              showTitles: true,
+              reservedSize: 45,
+              getTitlesWidget: (val, meta) => Text('\$${val.toInt()}', style: const TextStyle(fontSize: 10)),
+            ),
           ),
-        ],
+          bottomTitles: AxisTitles(
+            sideTitles: SideTitles(
+              showTitles: true,
+              getTitlesWidget: (value, meta) {
+                if (isMonthly) {
+                  const shortMonths = ['', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+                  return SideTitleWidget(
+                    axisSide: meta.axisSide,
+                    child: Text(shortMonths[value.toInt()], style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                  );
+                } else {
+                  return SideTitleWidget(
+                    axisSide: meta.axisSide,
+                    child: Text('${value.toInt()}', style: const TextStyle(fontSize: 10)),
+                  );
+                }
+              },
+            ),
+          ),
+          rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+          topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+        ),
+        gridData: FlGridData(
+          show: true,
+          drawVerticalLine: false,
+          getDrawingHorizontalLine: (value) => FlLine(color: Colors.grey.withOpacity(0.1), strokeWidth: 1),
+        ),
+        borderData: FlBorderData(show: false),
       ),
     );
+  }
+
+  double _calculateMaxYFromEntries(List<MapEntry<int, double>> entries) {
+    if (entries.isEmpty) return 500;
+    final maxVal = entries.map((e) => e.value).reduce((a, b) => a > b ? a : b);
+    return maxVal == 0 ? 500 : maxVal * 1.2;
   }
 
 // NOTE: You must also ensure the SideTitleWidget is imported from 'package:fl_chart/fl_chart.dart';

@@ -6,11 +6,19 @@ import '../Models/Sales.dart';
 import '../Repo/BusinessRepository.dart';
 import '../Repo/ProductRepo.dart';
 import '../Repo/SalesRepo.dart';
-
+enum ChartViewMode { monthly, daily }
 class DashboardController extends GetxController {
   final BusinessRepository _businessRepo = BusinessRepository();
   final ProductRepo _productRepo = ProductRepo();
   final SalesRepo _salesRepo = SalesRepo();
+
+  // --- New State Variables ---
+  var viewMode = ChartViewMode.monthly.obs;
+  var selectedMonthForDaily = DateTime.now().obs; // The month user wants to see daily data for
+
+  // Metrics
+  RxMap<int, double> monthlyData = <int, double>{}.obs; // Key: 1-12 (Month)
+  RxMap<int, double> dailyData = <int, double>{}.obs;   // Key: 1-31 (Day)
 
   // --- Reactive Data State ---
   RxBool isLoading = true.obs;
@@ -110,5 +118,48 @@ class DashboardController extends GetxController {
     }.obs;
 
     monthlySalesData.assignAll(sortedMonthlyData);
+    _prepareMonthlyData();
+    _prepareDailyData();
   }
+
+
+  // Aggregates data for the 12 months of the CURRENT year
+  void _prepareMonthlyData() {
+    monthlyData.clear();
+    // Initialize all 12 months with 0.0
+    for (int i = 1; i <= 12; i++) monthlyData[i] = 0.0;
+
+    for (var s in allSales) {
+      if (s.soldAt.year == selectedMonthForDaily.value.year) {
+        monthlyData[s.soldAt.month] = (monthlyData[s.soldAt.month] ?? 0) + s.totalPrice;
+      }
+    }
+  }
+
+  // Aggregates data for each day of the SELECTED month
+  void _prepareDailyData() {
+    dailyData.clear();
+    int daysInMonth = DateTime(selectedMonthForDaily.value.year, selectedMonthForDaily.value.month + 1, 0).day;
+
+    // Initialize all days with 0.0
+    for (int i = 1; i <= daysInMonth; i++) dailyData[i] = 0.0;
+
+    for (var s in allSales) {
+      if (s.soldAt.month == selectedMonthForDaily.value.month &&
+          s.soldAt.year == selectedMonthForDaily.value.year) {
+        dailyData[s.soldAt.day] = (dailyData[s.soldAt.day] ?? 0) + s.totalPrice;
+      }
+    }
+  }
+
+  void changeViewMode(ChartViewMode mode) {
+    viewMode.value = mode;
+  }
+
+  void updateSelectedMonth(DateTime date) {
+    selectedMonthForDaily.value = date;
+    _prepareDailyData(); // Recalculate daily bars when month changes
+    _prepareMonthlyData(); // Recalculate monthly bars if year changed
+  }
+
 }

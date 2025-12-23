@@ -7,6 +7,7 @@ class ChatMessage {
   final Uint8List? fileBytes; // To display images/provide file data
   final String? fileType; // 'image' or 'document'
   final String? imageUrl; // 'image' or 'document'
+  final bool isImage;
   final String extractedText; // 'image' or 'document'
 
   ChatMessage({
@@ -17,6 +18,7 @@ class ChatMessage {
     this.fileBytes,
     this.imageUrl,
     this.extractedText = "",
+    this.isImage = false,
   });
 
   ChatMessage copyWith({
@@ -26,6 +28,7 @@ class ChatMessage {
     String? fileType,
     Uint8List? fileBytes,
     String? imageUrl,
+    bool isImage = false,
     String? extractedText,
   }) {
     return ChatMessage(
@@ -35,6 +38,7 @@ class ChatMessage {
       fileType: fileType ?? this.fileType,
       fileBytes: fileBytes ?? this.fileBytes,
       imageUrl: imageUrl ?? this.imageUrl,
+      isImage: isImage,
       extractedText: extractedText ?? this.extractedText,
     );
   }
