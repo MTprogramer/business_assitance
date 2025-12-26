@@ -4,8 +4,6 @@ import 'package:http/http.dart' as http;
 
 class AiRepository {
   final apiKey = String.fromEnvironment("API_KEY" , defaultValue: "");
-  // final apiKey = "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";
-
 
   Future<Map<String, String>> getAiReply(List<Map<String, dynamic>> history) async {
     const url = "https://api.openai.com/v1/responses";
