@@ -318,8 +318,8 @@ class _AIAssistantPanelState extends State<AIAssistantPanel> {
     return Material(
       color: Colors.transparent,
       child: Container(
-        width: 360,
-        height: 480,
+        width: 760,
+        height: 780,
         margin: const EdgeInsets.only(right: 16, bottom: 16),
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(

@@ -6,14 +6,19 @@ import '../Models/Sales.dart';
 import '../Repo/BusinessRepository.dart';
 import '../Repo/ProductRepo.dart';
 import '../Repo/SalesRepo.dart';
-enum ChartViewMode { monthly, daily }
+enum ChartViewMode { weekly, monthly, yearly }
 class DashboardController extends GetxController {
   final BusinessRepository _businessRepo = BusinessRepository();
   final ProductRepo _productRepo = ProductRepo();
   final SalesRepo _salesRepo = SalesRepo();
 
-  // --- New State Variables ---
   var viewMode = ChartViewMode.monthly.obs;
+  var selectedDate = DateTime.now().obs;
+
+  RxMap<int, double> chartData = <int, double>{}.obs;
+
+  // --- New State Variables ---
+  // var viewMode = ChartViewMode.monthly.obs;
   var selectedMonthForDaily = DateTime.now().obs; // The month user wants to see daily data for
 
   // Metrics
@@ -41,6 +46,20 @@ class DashboardController extends GetxController {
     // Fetch data for the entire system
     fetchDashboardData();
   }
+
+  void _setLatestYearAsDefault() {
+    if (allSales.isEmpty) {
+      selectedDate.value = DateTime.now();
+      return;
+    }
+
+    final latestSale = allSales.reduce(
+          (a, b) => a.soldAt.isAfter(b.soldAt) ? a : b,
+    );
+
+    selectedDate.value = DateTime(latestSale.soldAt.year, latestSale.soldAt.month);
+  }
+
 
   // Removed businessId parameter
   Future<void> fetchDashboardData() async {
@@ -120,6 +139,8 @@ class DashboardController extends GetxController {
     monthlySalesData.assignAll(sortedMonthlyData);
     _prepareMonthlyData();
     _prepareDailyData();
+    _setLatestYearAsDefault();
+    updateChartData();
   }
 
 
@@ -152,14 +173,103 @@ class DashboardController extends GetxController {
     }
   }
 
-  void changeViewMode(ChartViewMode mode) {
-    viewMode.value = mode;
-  }
+  // void changeViewMode(ChartViewMode mode) {
+  //   viewMode.value = mode;
+  // }
 
   void updateSelectedMonth(DateTime date) {
     selectedMonthForDaily.value = date;
     _prepareDailyData(); // Recalculate daily bars when month changes
     _prepareMonthlyData(); // Recalculate monthly bars if year changed
+  }
+
+  // Call this after fetching data or changing date/mode
+  void updateChartData() {
+    chartData.clear();
+    DateTime date = selectedDate.value;
+
+    if (viewMode.value == ChartViewMode.yearly) {
+      // Buckets 1-12 (Months)
+      for (int i = 1; i <= 12; i++) chartData[i] = 0.0;
+      for (var s in allSales) {
+        if (s.soldAt.year == date.year) {
+          chartData[s.soldAt.month] = (chartData[s.soldAt.month] ?? 0) + s.totalPrice;
+        }
+      }
+    }
+    else if (viewMode.value == ChartViewMode.monthly) {
+      // Buckets 1-31 (Days)
+      int daysInMonth = DateTime(date.year, date.month + 1, 0).day;
+      for (int i = 1; i <= daysInMonth; i++) chartData[i] = 0.0;
+      for (var s in allSales) {
+        if (s.soldAt.month == date.month && s.soldAt.year == date.year) {
+          chartData[s.soldAt.day] = (chartData[s.soldAt.day] ?? 0) + s.totalPrice;
+        }
+      }
+    }
+    // else if (viewMode.value == ChartViewMode.weekly) {
+    //   // Determine the week to display: either latest week with sales or user-selected week
+    //   if (allSales.isEmpty) return;
+    //
+    //   // Pick latest sale date if current week has no sales
+    //   DateTime latestSaleDate = allSales
+    //       .reduce((a, b) => a.soldAt.isAfter(b.soldAt) ? a : b)
+    //       .soldAt;
+    //
+    //   // Start of the week (Monday)
+    //   DateTime monday = DateTime(
+    //     latestSaleDate.year,
+    //     latestSaleDate.month,
+    //     latestSaleDate.day - (latestSaleDate.weekday - 1),
+    //   );
+    //   // Initialize 7 days
+    //   for (int i = 0; i < 7; i++) chartData[i] = 0.0;
+    //
+    //   for (var s in allSales) {
+    //     final saleDate = DateTime(s.soldAt.year, s.soldAt.month, s.soldAt.day);
+    //     int diff = saleDate.difference(monday).inDays;
+    //     if (diff >= 0 && diff < 7) {
+    //       chartData[diff] = (chartData[diff] ?? 0) + s.totalPrice;
+    //     }
+    //   }
+    //
+    //   // Update selectedDate to the Monday of that week
+    //   selectedDate.value = monday;
+    // }
+
+    else if (viewMode.value == ChartViewMode.weekly) {
+      // Buckets 0-6 (Mon-Sun)
+      // Find the Monday of the week containing selectedDate
+      DateTime monday = date.subtract(Duration(days: date.weekday - 1));
+      monday = DateTime(monday.year, monday.month, monday.day); // Strip time
+
+      for (int i = 0; i < 7; i++) chartData[i] = 0.0;
+
+      for (var s in allSales) {
+        DateTime saleDate = DateTime(s.soldAt.year, s.soldAt.month, s.soldAt.day);
+        int difference = saleDate.difference(monday).inDays;
+        if (difference >= 0 && difference < 7) {
+          chartData[difference] = (chartData[difference] ?? 0) + s.totalPrice;
+        }
+      }
+    }
+  }
+
+  void changeViewMode(ChartViewMode mode) {
+    viewMode.value = mode;
+    updateChartData();
+  }
+
+  void updateSelectedDate(DateTime date) {
+    selectedDate.value = date;
+    updateChartData();
+  }
+
+  // Helper for Max Y calculation
+  double get chartMaxY {
+    if (chartData.isEmpty) return 500;
+    double max = chartData.values.reduce((a, b) => a > b ? a : b);
+    return max == 0 ? 500 : max * 1.15;
   }
 
 }
