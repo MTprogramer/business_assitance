@@ -211,14 +211,12 @@ class DashboardScreen extends StatelessWidget {
       ),
     );
   }
-
   Widget _buildRevenueChart(BuildContext context) {
     return Obx(() {
       final mode = controller.viewMode.value;
       final dataMap = controller.chartData;
       final chartEntries = dataMap.entries.toList()..sort((a, b) => a.key.compareTo(b.key));
 
-      // Dynamic Header Text
       String title = "${mode.name.capitalizeFirst} Revenue";
       String subtitle = "";
       DateTime date = controller.selectedDate.value;
@@ -229,9 +227,13 @@ class DashboardScreen extends StatelessWidget {
         const months = ['', 'January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
         subtitle = "${months[date.month]} ${date.year}";
       } else {
-        DateTime mon = date.subtract(Duration(days: date.weekday - 1));
+        // Weekly View
+        DateTime mon = controller.selectedDate.value; // selectedDate is now always a Monday
         DateTime sun = mon.add(const Duration(days: 6));
-        subtitle = "${mon.day}/${mon.month} - ${sun.day}/${sun.month} (${date.year})";
+        const months = ['', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+        // Format: "17-23 (Nov 2025)"
+        subtitle = "${mon.day}-${sun.day} (${months[mon.month]} ${mon.year})";
       }
 
       return Container(
@@ -252,7 +254,17 @@ class DashboardScreen extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                    Text(subtitle, style: TextStyle(color: Colors.blue.shade700, fontSize: 13, fontWeight: FontWeight.w600)),
+                    const SizedBox(height: 4),
+                    // Navigation Subtitle Row
+                    Row(
+                      children: [
+                        if (mode != ChartViewMode.yearly)
+                          _navArrow(Icons.chevron_left, controller.canGoPrevious, controller.previousPeriod),
+                        Text(subtitle, style: TextStyle(color: Colors.blue.shade700, fontSize: 13, fontWeight: FontWeight.w600)),
+                        if (mode != ChartViewMode.yearly)
+                          _navArrow(Icons.chevron_right, controller.canGoNext, controller.nextPeriod),
+                      ],
+                    ),
                   ],
                 ),
                 _buildChartControls(context),
@@ -262,7 +274,6 @@ class DashboardScreen extends StatelessWidget {
             Expanded(
               child: LayoutBuilder(
                 builder: (context, constraints) {
-                  // Only scroll if Monthly (31 days)
                   bool isScrollable = mode == ChartViewMode.monthly;
                   double width = isScrollable ? 1000 : constraints.maxWidth;
 
@@ -283,6 +294,18 @@ class DashboardScreen extends StatelessWidget {
         ),
       );
     });
+  }
+
+// Small helper for navigation arrows
+  Widget _navArrow(IconData icon, bool isEnabled, VoidCallback onTap) {
+    return InkWell(
+      onTap: isEnabled ? onTap : null,
+      child: Icon(
+        icon,
+        size: 20,
+        color: isEnabled ? Colors.blue.shade700 : Colors.grey.shade300,
+      ),
+    );
   }
 
   Widget _buildChartControls(BuildContext context) {

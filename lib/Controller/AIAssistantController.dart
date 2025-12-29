@@ -72,15 +72,26 @@ class AiController extends GetxController {
 
   Future<String> extractTextFromXlsx(SelectedFile file) async {
     if (file.bytes == null) return '';
+
     final excel = Excel.decodeBytes(file.bytes!);
-    String result = '';
-    for (var table in excel.tables.keys) {
-      for (var row in excel.tables[table]!.rows) {
-        result += row.map((cell) => cell?.value.toString() ?? '').join(' ') + '\n';
+    final buffer = StringBuffer();
+
+    for (final table in excel.tables.values) {
+      for (final row in table.rows) {
+        final cells = row
+            .map((cell) => cell?.value?.toString().trim() ?? '')
+            .where((value) => value.isNotEmpty)
+            .toList();
+
+        if (cells.isEmpty) continue; // skip blank rows
+
+        buffer.writeln(cells.join(' '));
       }
     }
-    return result;
+
+    return buffer.toString();
   }
+
 
   Future<String> extractTextFromPdf(SelectedFile file) async {
     if (file.bytes == null) return '';

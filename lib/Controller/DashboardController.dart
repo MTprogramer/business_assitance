@@ -47,6 +47,147 @@ class DashboardController extends GetxController {
     fetchDashboardData();
   }
 
+
+  // Helper to normalize a date to the start of the day (00:00:00)
+  DateTime _normalize(DateTime date) => DateTime(date.year, date.month, date.day);
+
+  // Helper to get the Monday of any given date
+  DateTime _getMonday(DateTime date) {
+    DateTime d = _normalize(date);
+    return d.subtract(Duration(days: d.weekday - 1));
+  }
+
+  bool _weekHasData(DateTime monday) {
+    DateTime sunday = monday.add(const Duration(days: 6, hours: 23, minutes: 59));
+    return allSales.any((s) => s.soldAt.isAfter(monday.subtract(const Duration(seconds: 1))) &&
+        s.soldAt.isBefore(sunday.add(const Duration(seconds: 1))));
+  }
+
+  void nextPeriod() {
+    if (viewMode.value == ChartViewMode.monthly) {
+      // Find next month in the same year with data
+      for (int m = selectedDate.value.month + 1; m <= 12; m++) {
+        if (_monthHasData(selectedDate.value.year, m)) {
+          updateSelectedDate(DateTime(selectedDate.value.year, m, 1));
+          return;
+        }
+      }
+    } else if (viewMode.value == ChartViewMode.weekly) {
+      int currentMonth = selectedDate.value.month;
+      DateTime checkMonday = selectedDate.value.add(const Duration(days: 7));
+
+      // Keep looking for a Monday that has data, as long as it's in the same month
+      while (checkMonday.month == currentMonth) {
+        if (_weekHasData(checkMonday)) {
+          updateSelectedDate(checkMonday);
+          return;
+        }
+        checkMonday = checkMonday.add(const Duration(days: 7));
+      }
+    }
+  }
+
+  void previousPeriod() {
+    if (viewMode.value == ChartViewMode.monthly) {
+      for (int m = selectedDate.value.month - 1; m >= 1; m--) {
+        if (_monthHasData(selectedDate.value.year, m)) {
+          updateSelectedDate(DateTime(selectedDate.value.year, m, 1));
+          return;
+        }
+      }
+    } else if (viewMode.value == ChartViewMode.weekly) {
+      int currentMonth = selectedDate.value.month;
+      DateTime checkMonday = selectedDate.value.subtract(const Duration(days: 7));
+
+      while (checkMonday.month == currentMonth) {
+        if (_weekHasData(checkMonday)) {
+          updateSelectedDate(checkMonday);
+          return;
+        }
+        checkMonday = checkMonday.subtract(const Duration(days: 7));
+      }
+    }
+  }
+
+  void changeViewMode(ChartViewMode mode) {
+    viewMode.value = mode;
+
+    if (allSales.isEmpty) {
+      updateChartData();
+      return;
+    }
+
+    // Use the month and year the user is ALREADY looking at
+    DateTime currentView = selectedDate.value;
+
+    if (mode == ChartViewMode.weekly) {
+      // When switching to weekly, find the latest week WITH DATA
+      // inside the currently viewed month.
+      DateTime lastDayOfMonth = DateTime(currentView.year, currentView.month + 1, 0);
+      DateTime checkMonday = _getMonday(lastDayOfMonth);
+
+      bool foundWeek = false;
+      while (checkMonday.month == currentView.month) {
+        if (_weekHasData(checkMonday)) {
+          selectedDate.value = checkMonday;
+          foundWeek = true;
+          break;
+        }
+        checkMonday = checkMonday.subtract(const Duration(days: 7));
+      }
+
+      // If no sales found in this specific month, just show the first week of that month
+      if (!foundWeek) {
+        selectedDate.value = _getMonday(DateTime(currentView.year, currentView.month, 1));
+      }
+    }
+    else if (mode == ChartViewMode.monthly) {
+      // Keep the year, but ensure the date is set to the 1st of the month
+      selectedDate.value = DateTime(currentView.year, currentView.month, 1);
+    }
+
+    updateChartData();
+  }
+
+  // Check if a specific month in a year has sales
+  bool _monthHasData(int year, int month) {
+    return allSales.any((s) => s.soldAt.year == year && s.soldAt.month == month);
+  }
+
+
+  // Check if buttons should be enabled
+  bool get canGoNext {
+    if (viewMode.value == ChartViewMode.yearly) return false;
+    if (viewMode.value == ChartViewMode.monthly) {
+      for (int m = selectedDate.value.month + 1; m <= 12; m++) {
+        if (_monthHasData(selectedDate.value.year, m)) return true;
+      }
+    } else {
+      DateTime current = selectedDate.value.add(const Duration(days: 7));
+      while (current.month == selectedDate.value.month) {
+        if (_weekHasData(current)) return true;
+        current = current.add(const Duration(days: 7));
+      }
+    }
+    return false;
+  }
+
+  bool get canGoPrevious {
+    if (viewMode.value == ChartViewMode.yearly) return false;
+    if (viewMode.value == ChartViewMode.monthly) {
+      for (int m = selectedDate.value.month - 1; m >= 1; m--) {
+        if (_monthHasData(selectedDate.value.year, m)) return true;
+      }
+    } else {
+      DateTime current = selectedDate.value.subtract(const Duration(days: 7));
+      while (current.month == selectedDate.value.month) {
+        if (_weekHasData(current)) return true;
+        current = current.subtract(const Duration(days: 7));
+      }
+    }
+    return false;
+  }
+
   void _setLatestYearAsDefault() {
     if (allSales.isEmpty) {
       selectedDate.value = DateTime.now();
@@ -255,10 +396,6 @@ class DashboardController extends GetxController {
     }
   }
 
-  void changeViewMode(ChartViewMode mode) {
-    viewMode.value = mode;
-    updateChartData();
-  }
 
   void updateSelectedDate(DateTime date) {
     selectedDate.value = date;
