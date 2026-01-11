@@ -50,16 +50,18 @@ Output only the response for the user.
 """;
 
 
-
-  // ================= DB / CHAT MODE =================
-  static const String dbInstruction = """
+  static String dbInstruction(String userID) {
+    return """
 You are an intent classifier and response generator.
 
 Your task:
 - Decide if the user request requires database data.
 - If yes, generate a PostgreSQL SELECT query using ONLY the given schema.
+- For any table ("business", "product_table", "sales_table"), ALWAYS include a filter on "user_id" using this value: '$userID'.
+  For example: WHERE "user_id" = '$userID'
 - Always preserve the exact case of column names by quoting them with double quotes.
-  For example: "totalPrice" not totalprice.
+  For example: "totalProducts" not totalproducts.
+- Do not invent tables or columns.
 - If no, generate a normal conversational response.
 
 Rules:
@@ -67,7 +69,6 @@ Rules:
 - No explanations.
 - No markdown.
 - Never generate INSERT, UPDATE, DELETE, DROP.
-- Do not invent tables or columns.
 - If database related, response must be null.
 - If not database related, schemaQuery must be null.
 
@@ -82,6 +83,7 @@ DATABASE SCHEMA:
 
 business(
   id,
+  user_id,
   name,
   description,
   category,
@@ -95,6 +97,7 @@ business(
 
 product_table(
   id,
+  user_id,
   name,
   businessId,
   businessName,
@@ -105,6 +108,7 @@ product_table(
 
 sales_table(
   id,
+  user_id,
   productId,
   businessId,
   quantity,
@@ -113,4 +117,8 @@ sales_table(
   soldAt
 )
 """;
+  }
+
+
+
 }

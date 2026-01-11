@@ -11,13 +11,17 @@ import 'package:get/get.dart';
 import 'package:syncfusion_flutter_pdf/pdf.dart';
 import '../Models/MessageModel.dart';
 import '../Repo/AiRepository.dart';
+import '../Repo/ChatHistoryRepo.dart';
 import '../Utils/DB_ConstantInstrunctions.dart';
+import 'AuthController.dart';
 
 
 class AiController extends GetxController {
   final AiRepository repository;
   final Uploadrepo uploadrepo;
   final CustomDBRepo customDBRepo;
+  final authController = Get.find<AuthenticationController>();
+  late final ChatRepo chatRepo = ChatRepo(authController: authController);
 
   AiController({required this.repository, required this.uploadrepo, required this.customDBRepo});
 
@@ -27,6 +31,7 @@ class AiController extends GetxController {
   final RxBool writing = false.obs;
   final Duration typingDelay = const Duration(milliseconds: 30);
 
+
   void _streamResponse(String responseText, {String base64 = ""}) {
     // 1. Create a new message with empty text and add it to the list
     final streamingMessage = ChatMessage(
@@ -35,6 +40,7 @@ class AiController extends GetxController {
       text: "",
     );
     messages.add(streamingMessage);
+    saveMessageToSupabase(ChatMessage(text: responseText, role: "assistant"));
 
     final int messageIndex = messages.length - 1;
     int currentIndex = 0;
@@ -177,8 +183,9 @@ class AiController extends GetxController {
 
     final instruction = instructionType == InstructionTypes.IMAGE ? DbConstantInstructions.imageInstruction
         : instructionType == InstructionTypes.DOCUMENT ? DbConstantInstructions.documentInstruction
-        : DbConstantInstructions.dbInstruction;
+        : DbConstantInstructions.dbInstruction(authController.currentUser!.id.toString());
 
+    saveMessageToSupabase(messages[lastIndex]);
     final history = _buildHistory(instruction);
 
     //generate image if user asks for it with doc
@@ -267,7 +274,7 @@ class AiController extends GetxController {
         ? messages.sublist(messages.length - 10)
         : messages;
 
-    history.addAll( messages.where((m) => m.role != "ai").map((m) {
+    history.addAll( lastMessages.where((m) => m.role != "ai").map((m) {
       print("file type: ${m.fileType} base 64: ${m.imageUrl}");
 
       final message_type = m.role == "user" ? "input_text" : "output_text";
@@ -351,6 +358,17 @@ class AiController extends GetxController {
       ]
     });
     return history;
+  }
+
+
+
+  Future<void> saveMessageToSupabase(ChatMessage message) async {
+    await chatRepo.saveMessage(message);
+  }
+
+  Future<void> loadChatHistory() async {
+    final history = await chatRepo.fetchHistory();
+    messages.value = history;
   }
 
 

@@ -56,6 +56,7 @@ class _BusinessDetailsState extends State<BusinessDetails> {
     if (_formKey.currentState!.validate()) {
       final newBusiness = Business(
         id: widget.business.id,
+        user_id: widget.business.user_id,
         name: _nameController.text,
         description: _descriptionController.text,
         category: _categoryController.text,

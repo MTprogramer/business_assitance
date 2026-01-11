@@ -1,5 +1,6 @@
 class Business {
-  final int id; // Unique ID
+  final int? id; // Unique ID
+  final String user_id;
   final String name;
   final String description;
   final String category;
@@ -11,7 +12,8 @@ class Business {
   final DateTime date; // date when the business was added
 
   Business({
-    this.id = 0,
+    this.id,
+    this.user_id = "",
     this.name = "",
     this.description = "",
     this.category = "",
@@ -26,6 +28,7 @@ class Business {
   Map<String, dynamic> toMap() {
     return {
       'id': id,
+      'user_id': user_id,
       'name': name,
       'description': description,
       'category': category,
@@ -40,6 +43,7 @@ class Business {
   factory Business.fromMap(Map<String, dynamic> map) {
     return Business(
       id: map['id'],
+      user_id: map['user_id'],
       name: map['name'],
       description: map['description'],
       category: map['category'],
@@ -53,7 +57,7 @@ class Business {
 
   // Convert Business object to JSON (useful for saving in DB or API)
   Map<String, dynamic> toJson() => {
-    'id': id,
+    'user_id': user_id,
     'name': name,
     'description': description,
     'category': category,
@@ -67,7 +71,8 @@ class Business {
 
   // Create Business object from JSON
   factory Business.fromJson(Map<String, dynamic> json) => Business(
-    id: json['id'],
+    id: json['id'] ,
+    user_id: json['user_id'],
     name: json['name'],
     description: json['description'],
     category: json['category'],

@@ -72,12 +72,13 @@ class SalesRepo {
   }
   // --- Read Operations ---
 
-  Future<List<Sale>> getAllSales() async {
+  Future<List<Sale>> getAllSales(String userId) async {
     // ... (This function remains the same as before)
     try {
       final data = await _supabase
           .from(_salesTableName)
           .select('*')
+          .eq('user_id', userId)
           .order('soldAt', ascending: false);
 
       if (data is List) {

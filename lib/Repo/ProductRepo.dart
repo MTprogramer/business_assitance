@@ -52,12 +52,13 @@ class ProductRepo {
   // --- READ Operations ---
 
   /// 2. Get All Products for a Specific Business
-  Future<List<Product>> getAllProducts() async {
+  Future<List<Product>> getAllProducts(String userId) async {
     try {
       // Filter products by the business_id column
       final data = await _supabase
           .from(_tableName)
-          .select('*');
+          .select('*')
+          .eq('user_id', userId);
 
       print("Data: $data");
       return data.map((e) => Product.fromJson(e)).toList();

@@ -2,10 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../Models/BusinessModel.dart';
 import '../Repo/BusinessRepository.dart';
+import 'AuthController.dart';
 
 class BusinessController extends GetxController {
   // Initialize the Repository
   final BusinessRepository repo = BusinessRepository();
+  final authController = Get.find<AuthenticationController>();
+
 
   // Reactive state variables
   RxBool isLoading = true.obs;
@@ -19,7 +22,7 @@ class BusinessController extends GetxController {
     super.onInit();
     print("BusinessController initialized");
     // Call the data loading function when the controller is ready
-    loadBusinesses();
+    // loadBusinesses();
   }
 
   /// Fetches all businesses from the repository (Supabase)
@@ -32,7 +35,7 @@ class BusinessController extends GetxController {
 
     try {
       // Fetch data from the Supabase repository
-      final List<Business> fetchedBusinesses = await repo.getAllBusiness();
+      final List<Business> fetchedBusinesses = await repo.getAllBusiness(authController.currentUser!.id);
 
       // Update the reactive list
       businessList.assignAll(fetchedBusinesses);
@@ -40,7 +43,7 @@ class BusinessController extends GetxController {
       if (fetchedBusinesses.isEmpty) {
         print("No businesses found in Supabase.");
       } else {
-        print("Successfully loaded ${fetchedBusinesses.length} businesses.");
+        print("Successfully loaded ${fetchedBusinesses.length} businesses. and id is ${authController.currentUser!.id}");
       }
 
     } catch (e) {

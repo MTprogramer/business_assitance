@@ -1,3 +1,4 @@
+import 'package:business_assistance/Controller/AuthController.dart';
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
 
@@ -8,6 +9,8 @@ import '../Repo/ProductRepo.dart';
 import '../Repo/SalesRepo.dart';
 enum ChartViewMode { weekly, monthly, yearly }
 class DashboardController extends GetxController {
+
+  final authController = Get.find<AuthenticationController>();
   final BusinessRepository _businessRepo = BusinessRepository();
   final ProductRepo _productRepo = ProductRepo();
   final SalesRepo _salesRepo = SalesRepo();
@@ -44,7 +47,7 @@ class DashboardController extends GetxController {
   void onInit() {
     super.onInit();
     // Fetch data for the entire system
-    fetchDashboardData();
+    // fetchDashboardData();
   }
 
 
@@ -209,9 +212,9 @@ class DashboardController extends GetxController {
 
     try {
       // 1. Fetch Raw Data (Using ALL methods)
-      final fetchedProducts = await _productRepo.getAllProducts(); // <-- Changed
-      final fetchedSales = await _salesRepo.getAllSales();         // <-- Changed
-      final fetchedBusinesses = await _businessRepo.getAllBusiness();
+      final fetchedProducts = await _productRepo.getAllProducts(authController.currentUser!.id); // <-- Changed
+      final fetchedSales = await _salesRepo.getAllSales(authController.currentUser!.id);         // <-- Changed
+      final fetchedBusinesses = await _businessRepo.getAllBusiness(authController.currentUser!.id);
 
       allProducts.assignAll(fetchedProducts);
       allSales.assignAll(fetchedSales);

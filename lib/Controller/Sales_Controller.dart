@@ -4,10 +4,12 @@ import '../../../Models/Product.dart';
 import '../../../Controller/Product_Controller.dart';
 import '../Models/Sales.dart';
 import '../Repo/SalesRepo.dart';
+import 'AuthController.dart';
 
 class SalesController extends GetxController {
   final SalesRepo _repo = SalesRepo();
   final ProductController productController = Get.find<ProductController>();
+
 
   RxBool isSelling = false.obs;
   // RxList<Sale> salesHistory = <Sale>[].obs; // Optional: for history tracking
@@ -49,6 +51,7 @@ class SalesController extends GetxController {
         quantity: quantitySold,
         unitPrice: product.price,
         totalPrice: quantitySold * product.price, // Calculate total price
+        user_id: product.user_id,
         soldAt: DateTime.now(),
       );
 

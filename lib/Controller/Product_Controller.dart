@@ -7,11 +7,13 @@ import 'package:business_assistance/Repo/BusinessRepository.dart';
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
 import '../../../Models/Product.dart';
-import '../Repo/ProductRepo.dart'; // Ensure correct path
+import '../Repo/ProductRepo.dart';
+import 'AuthController.dart'; // Ensure correct path
 
 class ProductController extends GetxController {
   final ProductRepo _repo = ProductRepo();
   final BusinessRepository _businessRepo = BusinessRepository();
+  final authController = Get.find<AuthenticationController>();
 
   // Reactive State
   RxBool isLoading = true.obs;
@@ -33,7 +35,7 @@ class ProductController extends GetxController {
     errorMessage.value = '';
 
     try {
-      final List<Product> fetchedProducts = await _repo.getProductsByBusinessId(business.id);
+      final List<Product> fetchedProducts = await _repo.getProductsByBusinessId(business.id ?? 0);
 
       // Update the reactive list
       productsList.assignAll(fetchedProducts);
@@ -61,7 +63,7 @@ class ProductController extends GetxController {
     errorMessage.value = '';
 
     try {
-      final List<Product> fetchedProducts = await _repo.getAllProducts();
+      final List<Product> fetchedProducts = await _repo.getAllProducts(authController.currentUser!.id);
 
       // Update the reactive list
       productsList.assignAll(fetchedProducts);
@@ -94,6 +96,7 @@ class ProductController extends GetxController {
         price: productData['price'],
         imageUrl: productData['imageUrl'],
         businessName: currentBusinessId?.name ?? '',
+        user_id: authController.currentUser?.id ?? '',
         businessId: currentBusinessId?.id ?? 0, // Use the ID of the current screen's business
         quantity: productData['quantity'],
       );
@@ -103,7 +106,7 @@ class ProductController extends GetxController {
 
       // 3. Update reactive list
       productsList.add(createdProduct);
-      _businessRepo.incrementTotalProducts(currentBusinessId!.id);
+      _businessRepo.incrementTotalProducts(currentBusinessId!.id ?? 0);
 
       Get.snackbar(
         "Success",
@@ -134,6 +137,7 @@ class ProductController extends GetxController {
         id: oldProduct.id,
         name: productData['name'],
         price: productData['price'],
+        user_id: oldProduct.user_id,
         imageUrl: productData['imageUrl'],
         businessName: oldProduct.businessName,
         businessId: oldProduct.businessId,

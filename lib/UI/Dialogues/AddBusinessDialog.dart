@@ -3,7 +3,10 @@
 import 'package:business_assistance/Models/BusinessModel.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:get/get_core/src/get_main.dart';
+import 'package:get/get_instance/src/extension_instance.dart';
 
+import '../../Controller/AuthController.dart';
 import '../Widgets/InputWidgets.dart';
 
 class AddBusinessDialog extends StatefulWidget {
@@ -15,6 +18,7 @@ class AddBusinessDialog extends StatefulWidget {
 }
 
 class _AddBusinessDialogState extends State<AddBusinessDialog> {
+  final authController = Get.find<AuthenticationController>();
   final TextEditingController nameController = TextEditingController();
   final TextEditingController descriptionController = TextEditingController();
   final TextEditingController categoryController = TextEditingController();
@@ -91,6 +95,7 @@ class _AddBusinessDialogState extends State<AddBusinessDialog> {
                       final businessData = Business(
                         name: nameController.text,
                         description: descriptionController.text,
+                        user_id: authController.currentUser!.id,
                         category: categoryController.text,
                         location: locationController.text,
                         phone: phoneController.text,

@@ -11,9 +11,9 @@ class BusinessRepository {
   // --- READ Operations ---
 
   /// 1. Get All Business (Current function, slightly modified for clarity)
-  Future<List<Business>> getAllBusiness() async {
+  Future<List<Business>> getAllBusiness(String userId) async {
     try {
-      final data = await _supabase.from(_tableName).select('*');
+      final data = await _supabase.from(_tableName).select('*').eq('user_id', userId);
 
       // Use Dart's type system for safety
       if (data is List) {
@@ -93,7 +93,7 @@ class BusinessRepository {
       final data = await _supabase
           .from(_tableName)
           .update(businessMap)
-          .eq('id', updatedBusiness.id) // Assuming 'id' is a required field
+          .eq('id', updatedBusiness.id ?? 0) // Assuming 'id' is a required field
           .select()
           .single();
 
