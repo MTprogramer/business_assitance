@@ -316,8 +316,23 @@ class AiController extends GetxController {
 
 
   String sanitizeQuery(String query) {
-    return query.trim().replaceAll(RegExp(r';+$'), '');
+    var q = query.trim();
+
+    // Remove SQL comments
+    q = q.replaceAll(RegExp(r'--.*$', multiLine: true), '');
+
+    // Remove LIMIT clauses
+    q = q.replaceAll(RegExp(r'\s+limit\s+\d+', caseSensitive: false), '');
+
+    // Remove trailing semicolons
+    q = q.replaceAll(RegExp(r';+$'), '');
+
+    return q.trim();
   }
+
+  // String sanitizeQuery(String query) {
+  //   return query.trim().replaceAll(RegExp(r';+$'), '');
+  // }
 
   List<Map<String, dynamic>> _buildRefiner({
     required String instruction,
